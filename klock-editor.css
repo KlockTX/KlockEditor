@@ -1,0 +1,517 @@
+/*!
+ * KlockEditor — 独立双模式编辑器样式（与 klock-editor.js 配套）
+ * KlockEditor — Standalone dual-mode editor styles (companion to klock-editor.js)
+ *
+ * Copyright (c) 2026 KlockTX
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * 自包含：所有 --klock-* 变量在 .klock-editor-root 上给出默认值，
+ * 宿主页面可通过覆盖这些变量定制主题，例如：
+ *   .klock-editor-root { --klock-primary: #e11d48; --klock-radius-md: 4px; }
+ */
+
+/* ====================== 作用域变量默认值（浅色） ====================== */
+
+.klock-editor-root {
+  --klock-primary: #0071e3;
+  --klock-on-primary: #ffffff;
+  --klock-primary-container: rgba(0, 113, 227, 0.1);
+  --klock-primary-hover: #0077ed;
+
+  --klock-text-1: #1d1d1f;
+  --klock-text-2: #6e6e73;
+  --klock-text-3: #aeaeb2;
+
+  --klock-surface: #ffffff;
+  --klock-surface-2: rgba(118, 118, 128, 0.08);
+  --klock-divider: rgba(60, 60, 67, 0.12);
+  --klock-border: rgba(60, 60, 67, 0.2);
+
+  --klock-glass-bg: rgba(255, 255, 255, 0.72);
+  --klock-glass-border: rgba(255, 255, 255, 0.55);
+  --klock-glass-blur: 20px;
+  --klock-glass-saturate: 160%;
+  --klock-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+
+  --klock-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --klock-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  --klock-radius-md: 12px;
+  --klock-radius-full: 999px;
+
+  --klock-space-1: 4px;
+  --klock-space-2: 8px;
+  --klock-space-3: 12px;
+  --klock-space-4: 16px;
+  --klock-space-5: 20px;
+  --klock-space-6: 24px;
+  --klock-space-8: 32px;
+  --klock-space-10: 40px;
+
+  --klock-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --klock-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --klock-leading-normal: 1.6;
+  --klock-leading-relaxed: 1.75;
+  --klock-line-height: 1.75;
+  --klock-header-height: 64px;
+
+  --klock-transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --klock-transition-fast: 0.16s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  font-family: var(--klock-font-sans);
+  color: var(--klock-text-1);
+}
+
+/* ====================== 深色（跟随系统，可被宿主覆盖） ====================== */
+
+@media (prefers-color-scheme: dark) {
+  .klock-editor-root:not([data-theme]) {
+    --klock-primary: #0a84ff;
+    --klock-on-primary: #ffffff;
+    --klock-primary-container: rgba(10, 132, 255, 0.18);
+    --klock-primary-hover: #409cff;
+
+    --klock-text-1: #f5f5f7;
+    --klock-text-2: #98989f;
+    --klock-text-3: #636366;
+
+    --klock-surface: #1c1c1e;
+    --klock-surface-2: rgba(120, 120, 128, 0.18);
+    --klock-divider: rgba(84, 84, 88, 0.6);
+    --klock-border: rgba(84, 84, 88, 0.65);
+
+    --klock-glass-bg: rgba(30, 30, 32, 0.72);
+    --klock-glass-border: rgba(120, 120, 128, 0.32);
+    --klock-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+
+    --klock-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --klock-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* 宿主强制浅色 / 深色（JS 传 theme: 'dark' | 'light'，或自行加 data-theme 属性） */
+.klock-editor-root[data-theme="light"] {
+  --klock-primary: #0071e3;
+  --klock-on-primary: #ffffff;
+  --klock-primary-container: rgba(0, 113, 227, 0.1);
+  --klock-text-1: #1d1d1f;
+  --klock-text-2: #6e6e73;
+  --klock-text-3: #aeaeb2;
+  --klock-surface: #ffffff;
+  --klock-surface-2: rgba(118, 118, 128, 0.08);
+  --klock-divider: rgba(60, 60, 67, 0.12);
+  --klock-border: rgba(60, 60, 67, 0.2);
+  --klock-glass-bg: rgba(255, 255, 255, 0.72);
+  --klock-glass-border: rgba(255, 255, 255, 0.55);
+  --klock-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.klock-editor-root[data-theme="dark"] {
+  --klock-primary: #0a84ff;
+  --klock-on-primary: #ffffff;
+  --klock-primary-container: rgba(10, 132, 255, 0.18);
+  --klock-text-1: #f5f5f7;
+  --klock-text-2: #98989f;
+  --klock-text-3: #636366;
+  --klock-surface: #1c1c1e;
+  --klock-surface-2: rgba(120, 120, 128, 0.18);
+  --klock-divider: rgba(84, 84, 88, 0.6);
+  --klock-border: rgba(84, 84, 88, 0.65);
+  --klock-glass-bg: rgba(30, 30, 32, 0.72);
+  --klock-glass-border: rgba(120, 120, 128, 0.32);
+  --klock-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* ====================== 模式切换标签 ====================== */
+
+.klock-editor-root .klock-editor-type-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: var(--klock-space-3);
+  padding: 3px;
+  background: color-mix(in srgb, var(--klock-text-1) 5%, transparent);
+  border-radius: var(--klock-radius-full);
+  width: fit-content;
+}
+
+.klock-editor-root .klock-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  font-size: 13.5px;
+  font-weight: 550;
+  font-family: inherit;
+  color: var(--klock-text-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--klock-transition-fast);
+  border-radius: var(--klock-radius-full);
+}
+
+.klock-editor-root .klock-tab-btn:hover {
+  color: var(--klock-text-1);
+}
+
+.klock-editor-root .klock-tab-btn.active {
+  color: var(--klock-text-1);
+  background: var(--klock-surface);
+  box-shadow: var(--klock-shadow-sm);
+  font-weight: 600;
+}
+
+/* ====================== 编辑器容器 ====================== */
+
+.klock-editor-root .klock-editor-wrap {
+  border: 0.5px solid var(--klock-glass-border);
+  border-radius: var(--klock-radius-md);
+  overflow: hidden;
+  background: var(--klock-glass-bg);
+  -webkit-backdrop-filter: blur(var(--klock-glass-blur)) saturate(var(--klock-glass-saturate));
+  backdrop-filter: blur(var(--klock-glass-blur)) saturate(var(--klock-glass-saturate));
+  box-shadow: var(--klock-glass-shadow);
+  margin-bottom: var(--klock-space-4);
+}
+
+/* ====================== 工具栏 ====================== */
+
+.klock-editor-root .klock-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: var(--klock-space-2);
+  background: color-mix(in srgb, var(--klock-surface) 35%, transparent);
+  border-bottom: 0.5px solid var(--klock-divider);
+}
+
+.klock-editor-root .klock-editor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--klock-text-2);
+  cursor: pointer;
+  transition: all var(--klock-transition-fast);
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.klock-editor-root .klock-editor-btn:hover {
+  background: color-mix(in srgb, var(--klock-primary) 10%, transparent);
+  color: var(--klock-primary);
+}
+
+.klock-editor-root .klock-editor-btn.active {
+  background: var(--klock-primary);
+  color: var(--klock-on-primary);
+}
+
+.klock-editor-root .klock-editor-btn svg {
+  display: block;
+  pointer-events: none;
+}
+
+.klock-editor-root .klock-editor-divider {
+  width: 0.5px;
+  align-self: stretch;
+  background: var(--klock-divider);
+  margin: 4px;
+}
+
+/* ====================== 编辑区 ====================== */
+
+.klock-editor-root .klock-editor-body {
+  display: flex;
+  min-height: 400px;
+}
+
+.klock-editor-root .klock-editor-body.split .klock-editor-pane {
+  flex: 1;
+}
+
+/* 仅编辑：隐藏预览栏（仅对 Markdown 双 pane 编辑器生效） */
+.klock-editor-root .klock-editor-body:not(.split):not(.preview-only) .klock-editor-pane:last-child {
+  display: none;
+}
+
+/* HTML 富文本编辑器为单 pane，不受"隐藏预览栏"规则影响 */
+.klock-editor-root .klock-editor-body:not(.split):not(.preview-only) > .klock-editor-pane-html:last-child {
+  display: flex;
+}
+
+/* 仅预览：隐藏编辑栏 */
+.klock-editor-root .klock-editor-body.preview-only .klock-editor-pane:first-child {
+  display: none;
+}
+
+.klock-editor-root .klock-editor-body.preview-only .klock-editor-pane:last-child {
+  flex: 1;
+}
+
+.klock-editor-root .klock-editor-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.klock-editor-root .klock-editor-pane + .klock-editor-pane {
+  border-left: 0.5px solid var(--klock-divider);
+}
+
+.klock-editor-root .klock-editor-textarea {
+  width: 100%;
+  flex: 1;
+  border: none;
+  padding: var(--klock-space-4) var(--klock-space-5);
+  font-family: var(--klock-font-mono);
+  font-size: 14px;
+  line-height: var(--klock-leading-relaxed);
+  color: var(--klock-text-1);
+  background: transparent;
+  resize: none;
+  outline: none;
+  min-height: 400px;
+  border-radius: 0;
+  box-sizing: border-box;
+}
+
+.klock-editor-root .klock-editor-preview {
+  padding: var(--klock-space-5);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.klock-editor-root .klock-editor-muted {
+  color: var(--klock-text-3);
+}
+
+/* HTML 富文本 contenteditable */
+.klock-editor-root .klock-html-editor {
+  flex: 1;
+  padding: var(--klock-space-4) var(--klock-space-5);
+  outline: none;
+  min-height: 400px;
+  overflow-y: auto;
+  font-size: 15px;
+  line-height: var(--klock-leading-normal);
+  color: var(--klock-text-1);
+}
+
+.klock-editor-root .klock-html-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--klock-text-3);
+  pointer-events: none;
+}
+
+/* HTML 源码 textarea */
+.klock-editor-root .klocke-html-src {
+  width: 100%;
+  min-height: 400px;
+  padding: var(--klock-space-4) var(--klock-space-5);
+  font-family: var(--klock-font-mono);
+  font-size: 14px;
+  line-height: var(--klock-leading-relaxed);
+  color: var(--klock-text-1);
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+/* ====================== 全屏 ====================== */
+
+.klock-editor-root .klock-editor-wrap.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+}
+
+.klock-editor-root .klock-editor-wrap.is-fullscreen .klock-editor-body {
+  height: calc(100vh - 56px);
+}
+
+/* ====================== 内置 Toast ====================== */
+
+.klock-editor-toast-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.klock-editor-toast {
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  color: #f5f5f7;
+  background: rgba(29, 29, 31, 0.88);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  animation: klock-editor-toast-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: opacity 0.35s, transform 0.35s;
+}
+
+.klock-editor-toast-success { background: rgba(48, 122, 68, 0.92); }
+.klock-editor-toast-error { background: rgba(178, 48, 45, 0.92); }
+.klock-editor-toast.out { opacity: 0; transform: translateY(-8px); }
+
+@keyframes klock-editor-toast-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ====================== 预览排版（.klock-markdown） ====================== */
+
+.klock-editor-root .klock-markdown {
+  font-size: 16.5px;
+  line-height: var(--klock-line-height);
+  color: var(--klock-text-1);
+  word-wrap: break-word;
+}
+
+.klock-editor-root .klock-markdown > * + * {
+  margin-top: var(--klock-space-4);
+}
+
+.klock-editor-root .klock-markdown h1,
+.klock-editor-root .klock-markdown h2,
+.klock-editor-root .klock-markdown h3,
+.klock-editor-root .klock-markdown h4,
+.klock-editor-root .klock-markdown h5,
+.klock-editor-root .klock-markdown h6 {
+  margin-top: var(--klock-space-10);
+}
+
+.klock-editor-root .klock-markdown h1 { font-size: 30px; }
+.klock-editor-root .klock-markdown h2 {
+  font-size: 25px;
+  padding-bottom: var(--klock-space-2);
+  border-bottom: 1px solid var(--klock-divider);
+}
+.klock-editor-root .klock-markdown h3 { font-size: 20px; }
+.klock-editor-root .klock-markdown h4 { font-size: 17px; }
+
+.klock-editor-root .klock-markdown p { overflow-wrap: break-word; }
+
+.klock-editor-root .klock-markdown a {
+  color: var(--klock-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--klock-transition-fast);
+}
+
+.klock-editor-root .klock-markdown strong {
+  font-weight: 700;
+  color: var(--klock-text-1);
+}
+
+.klock-editor-root .klock-markdown ul,
+.klock-editor-root .klock-markdown ol { padding-left: 1.5em; }
+.klock-editor-root .klock-markdown ul { list-style: disc; }
+.klock-editor-root .klock-markdown ol { list-style: decimal; }
+.klock-editor-root .klock-markdown li + li { margin-top: var(--klock-space-1); }
+.klock-editor-root .klock-markdown li::marker { color: var(--klock-primary); }
+
+.klock-editor-root .klock-markdown blockquote {
+  padding: var(--klock-space-4) var(--klock-space-5);
+  background: var(--klock-surface-2);
+  border-left: 3px solid var(--klock-primary);
+  border-radius: 0 var(--klock-radius-md) var(--klock-radius-md) 0;
+  color: var(--klock-text-2);
+}
+
+.klock-editor-root .klock-markdown blockquote p { margin: 0; }
+
+.klock-editor-root .klock-markdown code {
+  font-family: var(--klock-font-mono);
+  font-size: 0.86em;
+  padding: 2px 7px;
+  color: var(--klock-primary);
+  background: var(--klock-primary-container);
+  border-radius: 7px;
+}
+
+.klock-editor-root .klock-markdown pre {
+  padding: var(--klock-space-4) var(--klock-space-5);
+  background: #1d1d1f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--klock-radius-md);
+  overflow-x: auto;
+  line-height: 1.65;
+}
+
+.klock-editor-root .klock-markdown pre code {
+  padding: 0;
+  color: #f5f5f7;
+  background: transparent;
+  font-size: 13.5px;
+}
+
+.klock-editor-root .klock-markdown img {
+  max-width: 100%;
+  border-radius: var(--klock-radius-md);
+  box-shadow: var(--klock-shadow-md);
+}
+
+.klock-editor-root .klock-markdown hr { margin-block: var(--klock-space-8); }
+
+.klock-editor-root .klock-markdown table {
+  width: 100%;
+  font-size: 14.5px;
+  border: 1px solid var(--klock-border);
+  border-radius: var(--klock-radius-md);
+  overflow: hidden;
+  border-collapse: collapse;
+}
+
+.klock-editor-root .klock-markdown th,
+.klock-editor-root .klock-markdown td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--klock-divider);
+}
+
+.klock-editor-root .klock-markdown th {
+  font-weight: 700;
+  background: var(--klock-surface-2);
+}
+
+.klock-editor-root .klock-markdown tr:last-child td { border-bottom: none; }
+
+.klock-editor-root .klock-markdown input[type="checkbox"] { margin-right: 6px; }

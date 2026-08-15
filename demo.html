@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<!--
+  KlockEditor 演示页 / KlockEditor Demo
+  Copyright (c) 2026 KlockTX
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KlockEditor 独立编辑器 · 演示</title>
+<link rel="stylesheet" href="klock-editor.css">
+<style>
+  body {
+    margin: 0;
+    padding: 40px 20px 80px;
+    background: linear-gradient(135deg, #e8e8ec 0%, #d5d5dd 100%);
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+  .demo-wrap { max-width: 1080px; margin: 0 auto; }
+  .demo-head { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .demo-head h1 { font-size: 22px; margin: 0; color: #1d1d1f; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .demo-head p { margin: 4px 0 0; font-size: 13px; color: #6e6e73; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .demo-actions { display: flex; gap: 8px; }
+  .demo-btn {
+    padding: 8px 16px; font-size: 13px; border-radius: 999px; border: none; cursor: pointer;
+    background: rgba(255,255,255,.75); color: #1d1d1f; backdrop-filter: blur(12px);
+    box-shadow: 0 2px 8px rgba(0,0,0,.08); font-family: inherit;
+  }
+  .demo-btn:hover { background: #fff; }
+  #console {
+    margin-top: 16px; padding: 14px 18px; border-radius: 12px;
+    background: #1d1d1f; color: #9ee7a0; font: 12.5px/1.7 ui-monospace, Consolas, monospace;
+    white-space: pre-wrap; word-break: break-all; min-height: 20px; max-height: 240px; overflow-y: auto;
+  }
+</style>
+</head>
+<body>
+<div class="demo-wrap">
+  <div class="demo-head">
+    <div>
+      <h1>KlockEditor 独立编辑器</h1>
+      <p>双模式（Markdown / HTML 富文本）· 零依赖 · 双击本文件即可离线体验 · 主题跟随系统 · MIT</p>
+    </div>
+    <div class="demo-actions">
+      <button class="demo-btn" id="btn-log">打印内容到控制台</button>
+      <button class="demo-btn" id="btn-set">填充示例内容</button>
+      <button class="demo-btn" id="btn-clear">清空</button>
+    </div>
+  </div>
+
+  <div id="editor"></div>
+
+  <div id="console">事件日志（onChange 节流显示 / onSave / 按钮操作）…</div>
+</div>
+
+<script src="klock-editor.js"></script>
+<script>
+  var consoleEl = document.getElementById('console');
+  var logTimer = null;
+  function log(msg) {
+    consoleEl.textContent = msg;
+  }
+
+  var editor = KlockEditor.create(document.getElementById('editor'), {
+    type: 'markdown',
+    content: [
+      '# 欢迎使用 KlockEditor',
+      '',
+      '这是一个**独立分发**的编辑器组件，零外部依赖，采用 MIT 协议开源。',
+      '',
+      '## 主要特性',
+      '',
+      '- Markdown 与 HTML 富文本双模式切换',
+      '- 实时分屏预览（无后端时使用内置迷你渲染器）',
+      '- 拖拽 / 粘贴图片上传（配置 `uploadUrl` 后生效）',
+      '- 快捷键：`Ctrl+B` 粗体 / `Ctrl+I` 斜体 / `Ctrl+K` 链接 / `Ctrl+S` 保存',
+      '- 全屏、源码模式、视图三态（编辑 / 分屏 / 预览）',
+      '- 自动深色模式（跟随系统），可通过 `theme` 选项强制',
+      '',
+      '> 接入服务端渲染只需一行：`previewUrl: \'server/preview.php\'`',
+      '',
+      '```js',
+      'var editor = KlockEditor.create(el, {',
+      '    previewUrl: \'/server/preview.php\',',
+      '    uploadUrl:  \'/server/upload.php\',',
+      '    onChange: fn, onSave: fn',
+      '});',
+      '```',
+      '',
+      '| 能力 | 说明 |',
+      '|---|---|',
+      '| 零依赖 | 不依赖 jQuery / Lucide / 任何框架 |',
+      '| 主题化 | 覆盖 `.klock-editor-root` 上的 `--klock-*` 变量即可 |',
+      '| UMD | 浏览器全局 + CommonJS 均可引入 |',
+      '',
+      '试试切换到 **HTML 富文本** 模式，或直接拖一张图片进编辑区。'
+    ].join('\n'),
+
+    // —— 服务端接入示例（本演示为纯静态离线页，故注释掉）——
+    // previewUrl: 'server/preview.php',
+    // uploadUrl:  'server/upload.php',
+
+    onChange: function (content, type) {
+      if (logTimer) return;
+      logTimer = setTimeout(function () {
+        logTimer = null;
+        log('[onChange] type=' + type + ' · length=' + content.length);
+      }, 600);
+    },
+    onSave: function (content, type) {
+      log('[onSave] type=' + type + ' · length=' + content.length + '（Ctrl/Cmd+S 触发）');
+    }
+  });
+
+  document.getElementById('btn-log').onclick = function () {
+    log('[getContent] type=' + editor.getType() + '\n' + editor.getContent().substring(0, 400));
+  };
+  document.getElementById('btn-set').onclick = function () {
+    editor.setContent('# 新内容\n\n通过 `setContent()` 设置的内容。');
+  };
+  document.getElementById('btn-clear').onclick = function () {
+    editor.setContent('');
+  };
+</script>
+</body>
+</html>
