@@ -115,9 +115,9 @@
       '试试切换到 **HTML 富文本** 模式，或直接拖一张图片进编辑区。'
     ].join('\n'),
 
-    // —— 服务端接入示例（本演示为纯静态离线页，故注释掉）——
-    // previewUrl: 'server/preview.php',
-    // uploadUrl:  'server/upload.php',
+    // —— 服务端接入示例 ——
+    previewUrl: 'server/preview.php',
+    uploadUrl:  'server/upload.php',
 
     onChange: function (content, type) {
       if (logTimer) return;

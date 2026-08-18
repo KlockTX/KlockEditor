@@ -328,6 +328,11 @@
   pointer-events: none;
 }
 
+/* 源码模式：隐藏富文本 pane（!important 覆盖上方非分屏规则对 pane-html 的 display:flex） */
+.klock-editor-root .klock-editor-wrap.source-mode .klock-editor-pane-html {
+  display: none !important;
+}
+
 /* HTML 源码 textarea */
 .klock-editor-root .klocke-html-src {
   width: 100%;

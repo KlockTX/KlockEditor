@@ -49,7 +49,7 @@
 (function () {
     'use strict';
 
-    var VERSION = '1.0.0';
+    var VERSION = '1.0.1';
 
     // ====================== 内联图标（Lucide 风格，24x24 描边） ======================
 
@@ -94,6 +94,7 @@
     // ====================== 内置极简 Toast ======================
 
     var toastContainer = null;
+    var activeEditors = 0;
     function showToast(msg, type) {
         if (!toastContainer) {
             toastContainer = document.createElement('div');
@@ -134,10 +135,19 @@
         var lines = escapeHtml(src).split('\n');
         var out = [], i = 0, m;
 
+        // URL 协议白名单：阻断 javascript:/data: 等协议注入（此处输入已做 HTML 转义）
+        function safeUrl(u) {
+            return /^(https?:|\/|#|mailto:)/i.test(u) ? u : '';
+        }
+
         function inline(s) {
             return s
-                .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img src="$2" alt="$1">')
-                .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>')
+                .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function (_, alt, u) {
+                    return '<img src="' + safeUrl(u) + '" alt="' + alt + '">';
+                })
+                .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (_, text, u) {
+                    return '<a href="' + safeUrl(u) + '">' + text + '</a>';
+                })
                 .replace(/`([^`]+)`/g, '<code>$1</code>')
                 .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
                 .replace(/\*([^*]+)\*/g, '<em>$1</em>');
@@ -199,6 +209,7 @@
     function create(container, options) {
         if (!container) throw new Error('KlockEditor.create: container is required');
         var opts = options || {};
+        activeEditors++;
 
         var id = 'klocke' + (++uid);
         var previewTimer = null;
@@ -319,11 +330,15 @@
                     body: fd,
                     credentials: 'same-origin',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                }).then(function (r) { return r.json(); }).then(function (j) {
+                }).then(function (r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                }).then(function (j) {
                     if (destroyed) return;
-                    preview.innerHTML = (j && j.html) ? j.html : '<div class="klock-editor-muted">预览失败</div>';
+                    preview.innerHTML = (j && j.html) ? j.html : miniMarkdown(content);
                 }).catch(function () {
-                    if (!destroyed) preview.innerHTML = '<div class="klock-editor-muted">预览失败</div>';
+                    // 服务端不可用或响应异常时回退内置渲染器，保证离线可用
+                    if (!destroyed) preview.innerHTML = miniMarkdown(content);
                 });
                 return;
             }
@@ -378,6 +393,19 @@
             fireChange();
         }
 
+        function prefixLines(make) {
+            var s = getSel();
+            var ls = textarea.value.lastIndexOf('\n', s.start - 1) + 1;
+            var le = textarea.value.indexOf('\n', s.end);
+            if (le === -1) le = textarea.value.length;
+            var out = textarea.value.substring(ls, le).split('\n')
+                .map(function (line, i) { return make(i) + line; }).join('\n');
+            textarea.value = textarea.value.substring(0, ls) + out + textarea.value.substring(le);
+            setSel(ls, ls + out.length);
+            triggerPreview();
+            fireChange();
+        }
+
         function insert(text) {
             var s = getSel();
             textarea.value = textarea.value.substring(0, s.start) + text + textarea.value.substring(s.end);
@@ -395,8 +423,8 @@
                 case 'h3': prefix('### '); break;
                 case 'code': wrap('\n```\n', '\n```\n'); break;
                 case 'quote': prefix('> '); break;
-                case 'ul': prefix('- '); break;
-                case 'ol': prefix('1. '); break;
+                case 'ul': prefixLines(function () { return '- '; }); break;
+                case 'ol': prefixLines(function (i) { return (i + 1) + '. '; }); break;
                 case 'hr': insert('\n---\n'); break;
                 case 'table': insert('\n| 列1 | 列2 |\n|---|---|\n| 内容 | 内容 |\n'); break;
                 case 'link': {
@@ -601,6 +629,12 @@
             if (btn.hasAttribute('data-html-fullscreen')) { toggleFullscreen(htmlWrap, 'data-html-fullscreen'); return; }
         });
 
+        root.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            if (mdWrap.classList.contains('is-fullscreen')) toggleFullscreen(mdWrap, 'data-md-fullscreen');
+            else if (htmlWrap.classList.contains('is-fullscreen')) toggleFullscreen(htmlWrap, 'data-html-fullscreen');
+        });
+
         function handleMdKeys(e) {
             if (e.key === 'Tab') { e.preventDefault(); insert('    '); return; }
             if (!(e.ctrlKey || e.metaKey)) return;
@@ -667,8 +701,13 @@
             },
             destroy: function () {
                 destroyed = true;
+                activeEditors--;
                 if (previewTimer) clearTimeout(previewTimer);
                 if (root.parentNode) root.parentNode.removeChild(root);
+                if (activeEditors === 0 && toastContainer && toastContainer.parentNode) {
+                    toastContainer.parentNode.removeChild(toastContainer);
+                    toastContainer = null;
+                }
             }
         };
     }
