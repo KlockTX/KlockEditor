@@ -1,0 +1,37 @@
+{
+  "name": "klock-editor",
+  "version": "1.0.2",
+  "description": "Standalone dual-mode editor (Markdown + HTML rich text), zero dependencies. 独立双模式编辑器，零依赖。",
+  "main": "klock-editor.js",
+  "types": "klock-editor.d.ts",
+  "files": [
+    "klock-editor.js",
+    "klock-editor.css",
+    "klock-editor.d.ts",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test/mini-markdown.test.js"
+  },
+  "keywords": [
+    "editor",
+    "markdown",
+    "rich-text",
+    "wysiwyg",
+    "contenteditable",
+    "zero-dependency",
+    "standalone"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KlockTX/KlockEditor.git"
+  },
+  "author": "KlockTX",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/KlockTX/KlockEditor/issues"
+  },
+  "homepage": "https://github.com/KlockTX/KlockEditor#readme"
+}

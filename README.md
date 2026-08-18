@@ -23,6 +23,8 @@ KlockEditor 是一个独立双模式编辑器组件，提供 **Markdown 分屏�
 - **主题化**：全部样式走 `.klock-editor-root` 作用域内的 `--klock-*` CSS 变量，覆盖即定制
 - **UMD 导出**：浏览器全局 `window.KlockEditor` 与 CommonJS 均可
 - **图标内联**：工具栏图标为内联 SVG，无需图标字体或外部图标库
+- **TypeScript**：附 `klock-editor.d.ts` 类型声明，CommonJS 引入与 `window.KlockEditor` 全局均有类型
+- **单元测试**：`npm test`（零依赖 Node 断言，覆盖迷你渲染器语法与 XSS 阻断）
 
 ### 目录结构
 
@@ -30,7 +32,11 @@ KlockEditor 是一个独立双模式编辑器组件，提供 **Markdown 分屏�
 KlockEditor/
 ├── klock-editor.js        核心脚本（唯一必需文件）
 ├── klock-editor.css       配套样式（唯一必需文件）
+├── klock-editor.d.ts      TypeScript 类型声明
 ├── demo.html              演示页（双击即可离线体验）
+├── package.json           npm 包信息与测试脚本
+├── test/                  零依赖单元测试（npm test）
+├── CHANGELOG.md           变更日志
 ├── LICENSE                MIT 全文
 └── server/                可选服务端（PHP）
     ├── preview.php          Markdown 预览渲染端点
@@ -129,6 +135,8 @@ KlockEditor is a standalone dual-mode editor component. It provides **Markdown s
 - **Themeable**: everything is driven by `--klock-*` CSS variables scoped to `.klock-editor-root`
 - **UMD export**: works as `window.KlockEditor` and under CommonJS
 - **Inline icons**: toolbar icons are inline SVG — no icon font, no icon library
+- **TypeScript**: ships `klock-editor.d.ts`, covering both CommonJS imports and the `window.KlockEditor` global
+- **Unit tests**: `npm test` (zero-dependency Node assertions covering mini-renderer syntax and XSS blocking)
 
 ### Directory Layout
 
@@ -136,7 +144,11 @@ KlockEditor is a standalone dual-mode editor component. It provides **Markdown s
 KlockEditor/
 ├── klock-editor.js        Core script (the only required file)
 ├── klock-editor.css       Companion styles (the only required file)
+├── klock-editor.d.ts      TypeScript declarations
 ├── demo.html              Demo page (double-click for offline experience)
+├── package.json           npm metadata and test script
+├── test/                  Zero-dependency unit tests (npm test)
+├── CHANGELOG.md           Changelog
 ├── LICENSE                Full MIT text
 └── server/                Optional PHP backend
     ├── preview.php          Markdown preview rendering endpoint

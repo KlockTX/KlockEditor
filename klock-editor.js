@@ -49,7 +49,7 @@
 (function () {
     'use strict';
 
-    var VERSION = '1.0.1';
+    var VERSION = '1.0.2';
 
     // ====================== 内联图标（Lucide 风格，24x24 描边） ======================
 
@@ -116,6 +116,20 @@
     function escapeHtml(s) {
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
             .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    /**
+     * 可撤销写入：优先 execCommand('insertText')（计入浏览器撤销栈，Ctrl+Z 可撤销），
+     * 不支持时退回 setRangeText（值仍正确，但可能不进撤销栈）。
+     * 直接赋 value 或仅用 setRangeText 会绕过编辑事务，工具栏操作将无法撤销。
+     */
+    function undoableInsert(ta, start, end, text) {
+        ta.focus();
+        try { ta.setSelectionRange(start, end); } catch (e) { /* 旧浏览器忽略 */ }
+        var ok = false;
+        try { ok = document.execCommand('insertText', false, text); } catch (e) { ok = false; }
+        if (!ok) ta.setRangeText(text, start, end, 'end');
+        return ok;
     }
 
     // ====================== 内置迷你 Markdown 渲染器（离线兜底预览） ======================
@@ -378,7 +392,7 @@
         function wrap(before, after) {
             var s = getSel();
             var v = s.value || '文本';
-            textarea.value = textarea.value.substring(0, s.start) + before + v + after + textarea.value.substring(s.end);
+            undoableInsert(textarea, s.start, s.end, before + v + after);
             setSel(s.start + before.length, s.start + before.length + v.length);
             triggerPreview();
             fireChange();
@@ -387,7 +401,7 @@
         function prefix(p) {
             var s = getSel();
             var ls = textarea.value.lastIndexOf('\n', s.start - 1) + 1;
-            textarea.value = textarea.value.substring(0, ls) + p + textarea.value.substring(ls);
+            undoableInsert(textarea, ls, ls, p);
             setSel(s.start + p.length, s.end + p.length);
             triggerPreview();
             fireChange();
@@ -400,7 +414,7 @@
             if (le === -1) le = textarea.value.length;
             var out = textarea.value.substring(ls, le).split('\n')
                 .map(function (line, i) { return make(i) + line; }).join('\n');
-            textarea.value = textarea.value.substring(0, ls) + out + textarea.value.substring(le);
+            undoableInsert(textarea, ls, le, out);
             setSel(ls, ls + out.length);
             triggerPreview();
             fireChange();
@@ -408,7 +422,7 @@
 
         function insert(text) {
             var s = getSel();
-            textarea.value = textarea.value.substring(0, s.start) + text + textarea.value.substring(s.end);
+            undoableInsert(textarea, s.start, s.end, text);
             setSel(s.start + text.length, s.start + text.length);
             triggerPreview();
             fireChange();
@@ -463,10 +477,38 @@
 
         // ---------- HTML 富文本 ----------
 
+        // ---------- 工具栏状态同步：光标所在处已有加粗/斜体等样式时按钮高亮 ----------
+        // queryCommandState 与 execCommand 同属旧 API，在已有实现均基于 execCommand 的前提下配套使用
+
+        function syncToolbarState() {
+            if (destroyed || currentType !== 'html' || sourceMode) return;
+            var states;
+            try {
+                states = {
+                    bold: document.queryCommandState('bold'),
+                    italic: document.queryCommandState('italic'),
+                    underline: document.queryCommandState('underline'),
+                    strikeThrough: document.queryCommandState('strikeThrough')
+                };
+            } catch (e) { return; }
+            htmlWrap.querySelectorAll('[data-html-cmd]').forEach(function (b) {
+                if (b.dataset.htmlCmd in states) b.classList.toggle('active', !!states[b.dataset.htmlCmd]);
+            });
+        }
+
+        function onDocSelectionChange() {
+            if (destroyed || currentType !== 'html' || sourceMode) return;
+            var sel = window.getSelection();
+            if (sel && sel.anchorNode && ce.contains(sel.anchorNode)) syncToolbarState();
+        }
+
+        document.addEventListener('selectionchange', onDocSelectionChange);
+
         function exec(cmd, value) {
             ce.focus();
             try { document.execCommand(cmd, false, value || null); } catch (e) { return; }
             htmlSync();
+            syncToolbarState();
             fireChange();
         }
 
@@ -497,6 +539,7 @@
             if (sourceMode) {
                 htmlSync();
                 htmlWrap.classList.add('source-mode');
+                htmlWrap.querySelectorAll('[data-html-cmd]').forEach(function (b) { b.classList.remove('active'); });
                 if (pane) pane.setAttribute('hidden', '');
                 htmlTa.removeAttribute('hidden');
                 htmlTa.focus();
@@ -548,8 +591,8 @@
                 } else if (sourceMode) {
                     var s = htmlTa.selectionStart, e2 = htmlTa.selectionEnd;
                     var tag = '<img src="' + url + '" alt="">';
-                    htmlTa.value = htmlTa.value.substring(0, s) + tag + htmlTa.value.substring(e2);
-                    htmlTa.setSelectionRange(s + tag.length, s + tag.length);
+                    undoableInsert(htmlTa, s, e2, tag);
+                    fireChange();
                 } else {
                     exec('insertImage', url);
                 }
@@ -655,12 +698,29 @@
             else if (k === 'k') { e.preventDefault(); htmlCommand('createLink'); }
         }
 
-        textarea.addEventListener('input', function () { triggerPreview(); fireChange(); });
+        // ---------- IME 组合输入守卫：拼音/假名组词期间不触发 onChange 与预览 ----------
+        // Safari 的 input 先于 compositionend 触发（被守卫拦下），故 end 时补触发一次；
+        // Chrome 随后的 input 会再触发一次相同内容，双发无害（预览有 300ms 防抖）。
+        var composing = false;
+        function bindCompositionGuard(el, onInput) {
+            el.addEventListener('compositionstart', function () { composing = true; });
+            el.addEventListener('compositionend', function () {
+                composing = false;
+                onInput();
+            });
+            el.addEventListener('input', function () {
+                if (composing) return;
+                onInput();
+            });
+        }
+
+        bindCompositionGuard(textarea, function () { triggerPreview(); fireChange(); });
+        bindCompositionGuard(ce, function () { htmlSync(); fireChange(); });
+        bindCompositionGuard(htmlTa, function () { fireChange(); });
+
         textarea.addEventListener('keydown', handleMdKeys);
         ce.addEventListener('keydown', handleHtmlKeys);
         htmlTa.addEventListener('keydown', handleHtmlKeys);
-        ce.addEventListener('input', function () { htmlSync(); fireChange(); });
-        htmlTa.addEventListener('input', function () { fireChange(); });
 
         bindUploadDnd(textarea);
         bindUploadDnd(ce);
@@ -702,6 +762,7 @@
             destroy: function () {
                 destroyed = true;
                 activeEditors--;
+                document.removeEventListener('selectionchange', onDocSelectionChange);
                 if (previewTimer) clearTimeout(previewTimer);
                 if (root.parentNode) root.parentNode.removeChild(root);
                 if (activeEditors === 0 && toastContainer && toastContainer.parentNode) {
