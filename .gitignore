@@ -1,3 +1,14 @@
+# 运行时产物（保留 server/uploads/.htaccess 安全配置）
 uploads/
+!server/uploads/
+server/uploads/*
+!server/uploads/.htaccess
 *.log
 .worktrees/
+.idea/
+.playwright-mcp/
+dist/
+
+# 本地截图（非项目文件）
+/klock-editor-demo.png
+/klock-php-run.jpeg
