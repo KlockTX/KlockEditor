@@ -1,0 +1,16 @@
+# uploads/ 安全加固（Apache）：
+# - 禁止目录列举与脚本执行（即使有文件绕过上传白名单，也无法被执行）
+# - SVG/HTML 等潜在活动内容强制按纯文本下载，杜绝内联执行
+# 非 Apache 服务器（Nginx 等）请按同样思路自行配置。
+Options -Indexes
+
+<FilesMatch "\.(?i:php|phtml|php3|php4|php5|php7|phps|phar|cgi|pl|py|sh)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(?i:svg|svgz|html?|xhtml|xml)$">
+    <IfModule mod_headers.c>
+        Header set Content-Type text/plain
+        Header set Content-Disposition attachment
+    </IfModule>
+</FilesMatch>

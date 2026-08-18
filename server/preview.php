@@ -115,7 +115,8 @@ function klocke_markdown_to_html(string $content): string {
                 $id = $m[1];
                 if (isset($footnotes[$id])) {
                     $footnoteIndex++;
-                    return '<sup class="footnote-ref" id="fnref-' . $id . '"><a href="#fn-' . $id . '">[' . $footnoteIndex . ']</a></sup>';
+                    $eid = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
+                    return '<sup class="footnote-ref" id="fnref-' . $eid . '"><a href="#fn-' . $eid . '">[' . $footnoteIndex . ']</a></sup>';
                 }
                 return $m[0];
             }, $html), $html);
@@ -124,7 +125,9 @@ function klocke_markdown_to_html(string $content): string {
             $fnHtml = "\n<div class=\"footnotes\">\n<hr>\n<ol>\n";
             foreach ($footnotes as $id => $text) {
                 $footnoteIndex++;
-                $fnHtml .= '<li id="fn-' . $id . '">' . $text . ' <a href="#fnref-' . $id . '" class="footnote-back">&#8617;</a></li>' . "\n";
+                $eid = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
+                // 正文走与主文档相同的渲染管线，保持同等信任级别
+                $fnHtml .= '<li id="fn-' . $eid . '">' . $parsedown->text($text) . ' <a href="#fnref-' . $eid . '" class="footnote-back">&#8617;</a></li>' . "\n";
             }
             $fnHtml .= "</ol>\n</div>\n";
             $html .= $fnHtml;

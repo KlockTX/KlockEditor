@@ -29,7 +29,8 @@
  * 安全提示：
  *   - 已含扩展名白名单、MIME 黑名单、大小上限；
  *   - 默认无鉴权，生产环境请自行加登录态/CSRF 校验；
- *   - uploads/ 目录需可写，且 Web 服务器需允许直接访问（或自行改为流式输出）。
+ *   - uploads/ 目录需可写，且 Web 服务器需允许直接访问（或自行改为流式输出）；
+ *   - uploads/.htaccess 提供纵深防御（禁脚本执行、活动内容强制下载），非 Apache 环境请自行等效配置。
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -56,10 +57,11 @@ if ($urlPrefix === null) {
     $urlPrefix = ($dir === '' ? '' : $dir) . '/uploads/';
 }
 
-$allowExt = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif', 'bmp', 'ico'];
+// 不放行 svg：SVG 可内嵌脚本，直存直出会形成存储型 XSS（uploads/.htaccess 提供纵深防御）
+$allowExt = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'bmp', 'ico'];
 
-// 禁止直传的 HTML 容器型 MIME（SVG 允许但输出时强制下载语义由 Content-Type 决定）
-$denyMime = ['text/html', 'application/xhtml+xml', 'application/x-httpd-php'];
+// 禁止直传的 HTML 容器型 MIME
+$denyMime = ['text/html', 'application/xhtml+xml', 'application/x-httpd-php', 'image/svg+xml'];
 
 if (empty($_FILES['file'])) {
     http_response_code(400);
