@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.0.0 (2026-08-20)
+
+### 破坏性变更
+
+- **移除 HTML 富文本模式，专注 Markdown**。KlockEditor 现在是纯 Markdown 编辑器（textarea + 分屏预览），删除了 contenteditable 编辑区、HTML 工具栏、源码模式与 Markdown/HTML 模式切换标签
+- `type` 配置项与 `setType('html')` 不再生效：`setType` 保留为兼容性空操作（传非 `'markdown'` 值时在控制台输出警告），`getType()` 恒返回 `'markdown'`
+- `onChange` / `onSave` 回调签名从 `(content, type)` 简化为 `(content)`
+- 需要旧版双模式行为的用户请继续使用 v1.0.2
+
+### 收益
+
+- 核心体积缩减约 27%（js 782 → 571 行；css 517 → 440 行）
+- 移除 `document.execCommand` 富文本命令路径及其跨浏览器行为差异（工具栏可撤销写入仍使用 `execCommand('insertText')`，该用法各浏览器行为一致且计入撤销栈）
+- 删除 `selectionchange` document 级监听与 `queryCommandState` 状态同步逻辑
+
+### 保留能力
+
+- Markdown 工具栏全量命令、三视图（编辑/分屏/预览）、全屏（Esc 退出）、Tab 缩进、Ctrl/Cmd+B/I/K/S 快捷键
+- 撤销栈友好写入、IME 组合输入守卫、预览三级渲染链（previewFn → previewUrl → 内置迷你渲染器，服务端失败自动回退）
+- 拖拽/粘贴图片上传（uploadFn → uploadUrl）、CSRF 令牌、深色模式、CSS 变量主题化、UMD + CommonJS + TypeScript 声明、`npm test`（20 项断言）
+
 ## 1.0.2 (2026-08-18)
 
 ### 修复

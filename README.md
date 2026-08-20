@@ -1,8 +1,8 @@
 # KlockEditor
 
-**独立双模式编辑器 · Markdown + HTML 富文本 · 零依赖**
+**独立 Markdown 编辑器 · 分屏实时预览 · 零依赖**
 
-**Standalone dual-mode editor · Markdown + HTML rich text · Zero dependencies**
+**Standalone Markdown editor · Split live preview · Zero dependencies**
 
 ---
 
@@ -10,14 +10,14 @@
 
 ### 简介
 
-KlockEditor 是一个独立双模式编辑器组件，提供 **Markdown 分屏编辑** 与 **HTML 富文本（WYSIWYG）** 双模式，不依赖任何第三方框架（无 jQuery / Lucide / React），两个文件即可集成。
+KlockEditor 是一个独立的 Markdown 编辑器组件，提供 **分屏编辑与实时预览**，不依赖任何第三方框架（无 jQuery / Lucide / React），两个文件即可集成。（v2.0.0 起专注 Markdown，此前的 HTML 富文本模式已移除，需要双模式请用 v1.0.2）
 
 ### 特性
 
-- **双模式**：Markdown（textarea 选区操作）与 HTML 富文本（`contenteditable` + `execCommand`）一键切换
-- **实时预览**：300ms 防抖 + 内容变更检测；渲染器三级可插拔（自定义函数 → 服务端 → 内置迷你渲染器）
+- **纯 Markdown**：textarea 选区操作 + 300ms 防抖实时预览，工具栏写入可撤销（`Ctrl+Z` 有效）
+- **实时预览**：渲染器三级可插拔（自定义函数 → 服务端 → 内置迷你渲染器，服务端失败自动回退）
 - **图片上传**：拖拽 / 粘贴 / 工具栏三种入口，自动插入光标处
-- **视图三态**：仅编辑 / 分屏 / 仅预览，另有全屏模式与 HTML 源码模式
+- **视图三态**：仅编辑 / 分屏 / 仅预览，另有全屏模式（Esc 退出）
 - **快捷键**：`Ctrl/Cmd+B` 粗体 · `Ctrl/Cmd+I` 斜体 · `Ctrl/Cmd+K` 链接 · `Ctrl/Cmd+S` 保存 · `Tab` 缩进
 - **自动深色**：跟随系统 `prefers-color-scheme`，也可 `theme` 选项或 `data-theme` 属性强制
 - **主题化**：全部样式走 `.klock-editor-root` 作用域内的 `--klock-*` CSS 变量，覆盖即定制
@@ -54,9 +54,8 @@ KlockEditor/
 <script src="klock-editor.js"></script>
 <script>
   var editor = KlockEditor.create(document.getElementById('editor'), {
-    type: 'markdown',            // 'markdown' | 'html'
     content: '# 你好',           // 初始内容
-    onChange: function (content, type) { /* 内容或模式变化 */ },
+    onChange: function (content) { /* 内容变化 */ },
     onSave:   function () { /* Ctrl/Cmd+S */ }
   });
 </script>
@@ -75,8 +74,7 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 
 | 选项 | 类型 | 默认 | 说明 |
 |---|---|---|---|
-| `type` | string | `'markdown'` | 初始模式：`'markdown'` / `'html'` |
-| `content` | string | `''` | 初始内容（MD 文本或 HTML） |
+| `content` | string | `''` | 初始内容（Markdown 文本） |
 | `placeholder` | string | 内置 | Markdown 编辑区占位文案 |
 | `height` | number | `400` | 编辑区最小高度（px） |
 | `theme` | string | 自动 | `'dark'` / `'light'`，缺省跟随系统 |
@@ -85,18 +83,16 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 | `uploadUrl` | string | — | 图片上传端点 |
 | `uploadFn` | function | — | 自定义上传 `(file) => Promise<url>`（优先于 uploadUrl） |
 | `csrfToken` | string | — | 附加到预览/上传请求的 CSRF 令牌 |
-| `onChange` | function | — | `(content, type)` 内容或模式变化回调 |
-| `onSave` | function | — | `(content, type)` Ctrl/Cmd+S 回调 |
+| `onChange` | function | — | `(content)` 内容变化回调 |
+| `onSave` | function | — | `(content)` Ctrl/Cmd+S 回调 |
 
 ### 实例 API
 
 | 方法 | 返回 | 说明 |
 |---|---|---|
-| `getContent()` | string | 当前内容（MD 模式返回 MD 文本，HTML 模式返回 HTML） |
+| `getContent()` | string | 当前 Markdown 文本 |
 | `setContent(v)` | — | 设置内容并刷新预览 |
-| `getType()` | string | 当前模式 |
-| `setType(t)` | — | 切换 `'markdown'` / `'html'` |
-| `focus()` | — | 聚焦当前编辑区 |
+| `focus()` | — | 聚焦编辑区 |
 | `destroy()` | — | 移除 DOM 与所有事件监听 |
 
 ### 主题定制
@@ -122,14 +118,14 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 
 ### Introduction
 
-KlockEditor is a standalone dual-mode editor component. It provides **Markdown split-pane editing** and **HTML rich-text (WYSIWYG)** in one package, with zero third-party framework dependencies (no jQuery / Lucide / React). Two files are all you need.
+KlockEditor is a standalone Markdown editor component with **split-pane editing and live preview**, zero third-party framework dependencies (no jQuery / Lucide / React). Two files are all you need. (v2.0.0 is Markdown-only; the HTML rich-text mode was removed — use v1.0.2 if you need it.)
 
 ### Features
 
-- **Dual mode**: Markdown (textarea selection manipulation) and HTML rich text (`contenteditable` + `execCommand`), one-click switch
-- **Live preview**: 300ms debounce + change detection; pluggable renderer chain (custom function → server endpoint → built-in mini renderer)
+- **Markdown-only**: textarea selection manipulation + 300ms debounced live preview; toolbar edits are undoable (`Ctrl+Z` works)
+- **Live preview**: pluggable renderer chain (custom function → server endpoint → built-in mini renderer, with automatic fallback)
 - **Image upload**: drag-and-drop, paste, and toolbar; inserted at the cursor automatically
-- **Three view states**: edit-only / split / preview-only, plus fullscreen and HTML source mode
+- **Three view states**: edit-only / split / preview-only, plus fullscreen (Esc to exit)
 - **Shortcuts**: `Ctrl/Cmd+B` bold · `Ctrl/Cmd+I` italic · `Ctrl/Cmd+K` link · `Ctrl/Cmd+S` save · `Tab` indent
 - **Auto dark mode**: follows the system `prefers-color-scheme`; force via the `theme` option or `data-theme` attribute
 - **Themeable**: everything is driven by `--klock-*` CSS variables scoped to `.klock-editor-root`
@@ -166,9 +162,8 @@ KlockEditor/
 <script src="klock-editor.js"></script>
 <script>
   var editor = KlockEditor.create(document.getElementById('editor'), {
-    type: 'markdown',            // 'markdown' | 'html'
     content: '# Hello',          // initial content
-    onChange: function (content, type) { /* content or mode changed */ },
+    onChange: function (content) { /* content changed */ },
     onSave:   function () { /* Ctrl/Cmd+S */ }
   });
 </script>
@@ -187,8 +182,7 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `type` | string | `'markdown'` | Initial mode: `'markdown'` / `'html'` |
-| `content` | string | `''` | Initial content (MD text or HTML) |
+| `content` | string | `''` | Initial content (Markdown text) |
 | `placeholder` | string | built-in | Placeholder for the Markdown pane |
 | `height` | number | `400` | Minimum editor height (px) |
 | `theme` | string | auto | `'dark'` / `'light'`; defaults to system |
@@ -197,18 +191,16 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 | `uploadUrl` | string | — | Image upload endpoint |
 | `uploadFn` | function | — | Custom upload `(file) => Promise<url>` (takes precedence over uploadUrl) |
 | `csrfToken` | string | — | CSRF token appended to preview/upload requests |
-| `onChange` | function | — | `(content, type)` fired on content or mode change |
-| `onSave` | function | — | `(content, type)` fired on Ctrl/Cmd+S |
+| `onChange` | function | — | `(content)` fired on content change |
+| `onSave` | function | — | `(content)` fired on Ctrl/Cmd+S |
 
 ### Instance API
 
 | Method | Returns | Description |
 |---|---|---|
-| `getContent()` | string | Current content (MD text in markdown mode, HTML in html mode) |
+| `getContent()` | string | Current Markdown text |
 | `setContent(v)` | — | Set content and refresh preview |
-| `getType()` | string | Current mode |
-| `setType(t)` | — | Switch between `'markdown'` / `'html'` |
-| `focus()` | — | Focus the active editing pane |
+| `focus()` | — | Focus the editor |
 | `destroy()` | — | Remove DOM and all event listeners |
 
 ### Theming

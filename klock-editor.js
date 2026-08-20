@@ -1,6 +1,6 @@
 /*!
- * KlockEditor — 独立双模式编辑器（Markdown + HTML 富文本）
- * KlockEditor — Standalone dual-mode editor (Markdown + HTML rich text)
+ * KlockEditor — 独立 Markdown 编辑器
+ * KlockEditor — Standalone Markdown editor
  *
  * Copyright (c) 2026 KlockTX
  *
@@ -28,20 +28,18 @@
  *   <script src="klock-editor.js"></script>
  *   <script>
  *     var editor = KlockEditor.create(document.getElementById('editor'), {
- *         type: 'markdown',                     // 'markdown' | 'html'
  *         content: '# 你好',
  *         previewUrl: '/server/preview.php',    // 可选：服务端渲染（POST content → {html}）
  *         uploadUrl:  '/server/upload.php',     // 可选：图片上传（POST FormData → {url}）
- *         onChange: function(content, type) {}, // 内容或类型变化
+ *         onChange: function(content) {},       // 内容变化
  *         onSave:   function() {}               // Ctrl/Cmd+S
  *     });
- *     editor.getContent();   // 获取当前内容
+ *     editor.getContent();   // 获取 Markdown 文本
  *     editor.setContent(x);  // 设置内容
- *     editor.getType();      // 'markdown' | 'html'
- *     editor.setType('html');// 切换模式
  *     editor.destroy();      // 移除 DOM 与事件
  *   </script>
  *
+ * v2.0.0 起为纯 Markdown 编辑器（移除 HTML 富文本模式）。
  * 预览渲染优先级：previewFn（客户端函数）> previewUrl（服务端）> 内置迷你渲染器
  * 图片上传优先级：uploadFn（自定义 Promise）> uploadUrl（服务端）> 禁用
  * 未配置 previewUrl/previewFn 时使用内置迷你 Markdown 渲染器（纯客户端，离线可用）。
@@ -49,30 +47,22 @@
 (function () {
     'use strict';
 
-    var VERSION = '1.0.2';
+    var VERSION = '2.0.0';
 
     // ====================== 内联图标（Lucide 风格，24x24 描边） ======================
 
     var ICONS = {
         bold: '<path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>',
         italic: '<line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/>',
-        underline: '<path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" x2="20" y1="21" y2="21"/>',
-        strike: '<path d="M16 4c-.5-2-2-3-4-3s-4 1-4 3c0 1.5 1 2.5 3 3"/><path d="M12 20c3.5 0 6-1.5 6-4 0-1-.5-2-2-3"/><line x1="4" x2="20" y1="14" y2="14"/>',
         h1: '<path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M17 12l3-2v8"/>',
         h2: '<path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/>',
         h3: '<path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M17.5 10.5c1.7-1 3.5 0 3.5 1.5a2 2 0 0 1-2 2"/><path d="M17.5 17.5c1.7 1 3.5 0 3.5-1.5a2 2 0 0 0-2-2"/>',
-        pilcrow: '<path d="M12 4v16"/><path d="M19 12a4 4 0 0 0-4-4h-3a4 4 0 0 0 0 8h3"/>',
         quote: '<path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>',
         code: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
-        code2: '<path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/>',
         list: '<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>',
         listOrdered: '<line x1="10" x2="21" y1="6" y2="6"/><line x1="10" x2="21" y1="12" y2="12"/><line x1="10" x2="21" y1="18" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>',
-        alignLeft: '<line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/>',
-        alignCenter: '<line x1="21" x2="3" y1="6" y2="6"/><line x1="17" x2="7" y1="12" y2="12"/><line x1="19" x2="5" y1="18" y2="18"/>',
-        alignRight: '<line x1="21" x2="3" y1="6" y2="6"/><line x1="21" x2="9" y1="12" y2="12"/><line x1="21" x2="7" y1="18" y2="18"/>',
         link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
         image: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
-        eraser: '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>',
         minus: '<path d="M5 12h14"/>',
         table: '<path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>',
         pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
@@ -80,7 +70,6 @@
         eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
         maximize: '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>',
         minimize: '<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>',
-        fileCode: '<path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/>',
         fileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>'
     };
 
@@ -149,7 +138,6 @@
         var lines = escapeHtml(src).split('\n');
         var out = [], i = 0, m;
 
-        // URL 协议白名单：阻断 javascript:/data: 等协议注入（此处输入已做 HTML 转义）
         function safeUrl(u) {
             return /^(https?:|\/|#|mailto:)/i.test(u) ? u : '';
         }
@@ -229,19 +217,13 @@
         var previewTimer = null;
         var lastPreview = null;
         var destroyed = false;
-        var currentType = opts.type === 'html' ? 'html' : 'markdown';
 
         // ---------- DOM 构建 ----------
 
         var root = document.createElement('div');
         root.className = 'klock-editor-root';
         root.innerHTML =
-            '<div class="klock-editor-type-tabs" role="tablist">' +
-            '  <button type="button" class="klock-tab-btn klocke-md-tab' + (currentType === 'markdown' ? ' active' : '') + '">' + icon('fileText') + ' Markdown</button>' +
-            '  <button type="button" class="klock-tab-btn klocke-html-tab' + (currentType === 'html' ? ' active' : '') + '">' + icon('code2') + ' HTML 富文本</button>' +
-            '</div>' +
-
-            '<div class="klock-editor-wrap klocke-md' + (currentType === 'html' ? '" hidden' : '') + '">' +
+            '<div class="klock-editor-wrap klocke-md">' +
             '  <div class="klock-editor-toolbar">' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="bold" title="粗体 (Ctrl+B)">' + icon('bold') + '</button>' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="italic" title="斜体 (Ctrl+I)">' + icon('italic') + '</button>' +
@@ -268,65 +250,21 @@
             '    <div class="klock-editor-pane"><textarea class="klock-editor-textarea" name="klock_editor_markdown" aria-label="Markdown 编辑区" placeholder="' + escapeHtml(opts.placeholder || '在此输入 Markdown 正文... 支持拖拽/粘贴图片上传') + '"></textarea></div>' +
             '    <div class="klock-editor-pane"><div class="klock-editor-preview klock-markdown"><div class="klock-editor-muted">实时预览区...</div></div></div>' +
             '  </div>' +
-            '</div>' +
-
-            '<div class="klock-editor-wrap klocke-html' + (currentType === 'markdown' ? '" hidden' : '') + '">' +
-            '  <div class="klock-editor-toolbar">' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="bold" title="粗体">' + icon('bold') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="italic" title="斜体">' + icon('italic') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="underline" title="下划线">' + icon('underline') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="strikeThrough" title="删除线">' + icon('strike') + '</button>' +
-            '    <span class="klock-editor-divider"></span>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="formatBlock" data-html-value="h1" title="标题1">' + icon('h1') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="formatBlock" data-html-value="h2" title="标题2">' + icon('h2') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="formatBlock" data-html-value="h3" title="标题3">' + icon('h3') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="formatBlock" data-html-value="p" title="段落">' + icon('pilcrow') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="formatBlock" data-html-value="blockquote" title="引用">' + icon('quote') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="formatBlock" data-html-value="pre" title="代码块">' + icon('code') + '</button>' +
-            '    <span class="klock-editor-divider"></span>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="insertUnorderedList" title="无序列表">' + icon('list') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="insertOrderedList" title="有序列表">' + icon('listOrdered') + '</button>' +
-            '    <span class="klock-editor-divider"></span>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="justifyLeft" title="左对齐">' + icon('alignLeft') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="justifyCenter" title="居中">' + icon('alignCenter') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="justifyRight" title="右对齐">' + icon('alignRight') + '</button>' +
-            '    <span class="klock-editor-divider"></span>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="createLink" title="链接">' + icon('link') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="insertImage" title="图片">' + icon('image') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-cmd="removeFormat" title="清除格式">' + icon('eraser') + '</button>' +
-            '    <span class="klock-editor-divider"></span>' +
-            '    <button type="button" class="klock-editor-btn" data-html-toggle-source title="切换源码">' + icon('fileCode') + '</button>' +
-            '    <button type="button" class="klock-editor-btn" data-html-fullscreen title="全屏">' + icon('maximize') + '</button>' +
-            '  </div>' +
-            '  <div class="klock-editor-body">' +
-            '    <div class="klock-editor-pane klock-editor-pane-html">' +
-            '      <div class="klock-html-editor" contenteditable="true" role="textbox" aria-label="HTML 富文本编辑区" data-placeholder="在此输入 HTML 富文本内容... 支持拖拽/粘贴图片上传"></div>' +
-            '    </div>' +
-            '  </div>' +
-            '  <textarea class="klocke-html-src" name="klock_editor_html_source" aria-label="HTML 源码" hidden></textarea>' +
             '</div>';
 
         container.appendChild(root);
 
         var mdWrap = root.querySelector('.klocke-md');
-        var textarea = root.querySelector('.klocke-md .klock-editor-textarea');
-        var preview = root.querySelector('.klocke-md .klock-editor-preview');
-        var mdBody = root.querySelector('.klocke-md .klock-editor-body');
-        var htmlWrap = root.querySelector('.klocke-html');
-        var ce = root.querySelector('.klock-html-editor');
-        var htmlTa = root.querySelector('.klocke-html-src');
-        var mdTab = root.querySelector('.klocke-md-tab');
-        var htmlTab = root.querySelector('.klocke-html-tab');
+        var textarea = root.querySelector('.klock-editor-textarea');
+        var preview = root.querySelector('.klock-editor-preview');
+        var mdBody = root.querySelector('.klock-editor-body');
 
         if (opts.height) {
             mdBody.style.minHeight = opts.height + 'px';
-            ce.style.minHeight = opts.height + 'px';
         }
         if (opts.theme === 'dark' || opts.theme === 'light') {
             root.setAttribute('data-theme', opts.theme);
         }
-
-        var sourceMode = false;
 
         // ---------- 预览 ----------
 
@@ -466,92 +404,13 @@
             if (mode !== 'edit') triggerPreview(true);
         }
 
-        function toggleFullscreen(w, btnAttr) {
-            w.classList.toggle('is-fullscreen');
-            var i = w.querySelector('[' + btnAttr + '] svg');
+        function toggleFullscreen() {
+            mdWrap.classList.toggle('is-fullscreen');
+            var i = mdWrap.querySelector('[data-md-fullscreen] svg');
             if (i) {
-                var fs = w.classList.contains('is-fullscreen');
+                var fs = mdWrap.classList.contains('is-fullscreen');
                 i.innerHTML = fs ? ICONS.minimize : ICONS.maximize;
             }
-        }
-
-        // ---------- HTML 富文本 ----------
-
-        // ---------- 工具栏状态同步：光标所在处已有加粗/斜体等样式时按钮高亮 ----------
-        // queryCommandState 与 execCommand 同属旧 API，在已有实现均基于 execCommand 的前提下配套使用
-
-        function syncToolbarState() {
-            if (destroyed || currentType !== 'html' || sourceMode) return;
-            var states;
-            try {
-                states = {
-                    bold: document.queryCommandState('bold'),
-                    italic: document.queryCommandState('italic'),
-                    underline: document.queryCommandState('underline'),
-                    strikeThrough: document.queryCommandState('strikeThrough')
-                };
-            } catch (e) { return; }
-            htmlWrap.querySelectorAll('[data-html-cmd]').forEach(function (b) {
-                if (b.dataset.htmlCmd in states) b.classList.toggle('active', !!states[b.dataset.htmlCmd]);
-            });
-        }
-
-        function onDocSelectionChange() {
-            if (destroyed || currentType !== 'html' || sourceMode) return;
-            var sel = window.getSelection();
-            if (sel && sel.anchorNode && ce.contains(sel.anchorNode)) syncToolbarState();
-        }
-
-        document.addEventListener('selectionchange', onDocSelectionChange);
-
-        function exec(cmd, value) {
-            ce.focus();
-            try { document.execCommand(cmd, false, value || null); } catch (e) { return; }
-            htmlSync();
-            syncToolbarState();
-            fireChange();
-        }
-
-        function htmlCommand(cmd, value) {
-            switch (cmd) {
-                case 'createLink': {
-                    var url = prompt('请输入链接 URL：', 'https://');
-                    if (url) exec('createLink', url);
-                    break;
-                }
-                case 'insertImage': {
-                    var img = prompt('请输入图片 URL（留空可拖拽/粘贴上传）：', '');
-                    if (img) exec('insertImage', img);
-                    break;
-                }
-                case 'formatBlock': exec('formatBlock', '<' + value + '>'); break;
-                default: exec(cmd);
-            }
-        }
-
-        function htmlSync() {
-            htmlTa.value = ce.innerHTML;
-        }
-
-        function toggleSource() {
-            sourceMode = !sourceMode;
-            var pane = htmlWrap.querySelector('.klock-editor-pane-html');
-            if (sourceMode) {
-                htmlSync();
-                htmlWrap.classList.add('source-mode');
-                htmlWrap.querySelectorAll('[data-html-cmd]').forEach(function (b) { b.classList.remove('active'); });
-                if (pane) pane.setAttribute('hidden', '');
-                htmlTa.removeAttribute('hidden');
-                htmlTa.focus();
-            } else {
-                ce.innerHTML = htmlTa.value;
-                htmlWrap.classList.remove('source-mode');
-                htmlTa.setAttribute('hidden', '');
-                if (pane) pane.removeAttribute('hidden');
-                ce.focus();
-            }
-            var b = root.querySelector('[data-html-toggle-source] svg');
-            if (b) b.innerHTML = sourceMode ? ICONS.eye : ICONS.fileCode;
         }
 
         // ---------- 上传 ----------
@@ -586,16 +445,7 @@
             showToast('上传图片中...', 'info');
             doUpload(file).then(function (url) {
                 if (destroyed) return;
-                if (currentType === 'markdown') {
-                    insert('\n![图片](' + url + ')\n');
-                } else if (sourceMode) {
-                    var s = htmlTa.selectionStart, e2 = htmlTa.selectionEnd;
-                    var tag = '<img src="' + url + '" alt="">';
-                    undoableInsert(htmlTa, s, e2, tag);
-                    fireChange();
-                } else {
-                    exec('insertImage', url);
-                }
+                insert('\n![图片](' + url + ')\n');
                 showToast('图片已插入', 'success');
             }).catch(function (err) {
                 showToast((err && err.message) || '上传失败', 'error');
@@ -623,31 +473,11 @@
         // ---------- 变更回调 ----------
 
         function fireChange() {
-            if (typeof opts.onChange === 'function') opts.onChange(getContent(), currentType);
+            if (typeof opts.onChange === 'function') opts.onChange(textarea.value);
         }
 
         function fireSave() {
-            if (typeof opts.onSave === 'function') opts.onSave(getContent(), currentType);
-        }
-
-        // ---------- 类型切换 ----------
-
-        function setType(t) {
-            if (t !== 'markdown' && t !== 'html') return;
-            if (t === currentType) return;
-            currentType = t;
-            mdTab.classList.toggle('active', t === 'markdown');
-            htmlTab.classList.toggle('active', t === 'html');
-            if (t === 'markdown') {
-                htmlWrap.setAttribute('hidden', '');
-                mdWrap.removeAttribute('hidden');
-                triggerPreview(true);
-            } else {
-                mdWrap.setAttribute('hidden', '');
-                htmlWrap.removeAttribute('hidden');
-                htmlSync();
-            }
-            fireChange();
+            if (typeof opts.onSave === 'function') opts.onSave(textarea.value);
         }
 
         // ---------- 事件绑定 ----------
@@ -655,27 +485,13 @@
         root.addEventListener('click', function (e) {
             var btn = e.target.closest('button');
             if (!btn) return;
-            if (btn.classList.contains('klocke-md-tab')) { setType('markdown'); return; }
-            if (btn.classList.contains('klocke-html-tab')) { setType('html'); return; }
             if (btn.dataset.mdBtn) { mdCommand(btn.dataset.mdBtn); return; }
             if (btn.dataset.mdView) { setViewMode(btn.dataset.mdView); return; }
-            if (btn.hasAttribute('data-md-fullscreen')) { toggleFullscreen(mdWrap, 'data-md-fullscreen'); return; }
-            if (btn.dataset.htmlCmd) {
-                if (sourceMode && btn.dataset.htmlCmd !== 'removeFormat') {
-                    showToast('请先退出源码模式', 'info');
-                    return;
-                }
-                htmlCommand(btn.dataset.htmlCmd, btn.dataset.htmlValue);
-                return;
-            }
-            if (btn.hasAttribute('data-html-toggle-source')) { toggleSource(); return; }
-            if (btn.hasAttribute('data-html-fullscreen')) { toggleFullscreen(htmlWrap, 'data-html-fullscreen'); return; }
+            if (btn.hasAttribute('data-md-fullscreen')) { toggleFullscreen(); return; }
         });
 
         root.addEventListener('keydown', function (e) {
-            if (e.key !== 'Escape') return;
-            if (mdWrap.classList.contains('is-fullscreen')) toggleFullscreen(mdWrap, 'data-md-fullscreen');
-            else if (htmlWrap.classList.contains('is-fullscreen')) toggleFullscreen(htmlWrap, 'data-html-fullscreen');
+            if (e.key === 'Escape' && mdWrap.classList.contains('is-fullscreen')) toggleFullscreen();
         });
 
         function handleMdKeys(e) {
@@ -688,81 +504,49 @@
             else if (k === 's') { e.preventDefault(); fireSave(); }
         }
 
-        function handleHtmlKeys(e) {
-            if (!(e.ctrlKey || e.metaKey)) return;
-            var k = e.key.toLowerCase();
-            if (k === 's') { e.preventDefault(); fireSave(); return; }
-            if (sourceMode) return;
-            if (k === 'b') { e.preventDefault(); exec('bold'); }
-            else if (k === 'i') { e.preventDefault(); exec('italic'); }
-            else if (k === 'k') { e.preventDefault(); htmlCommand('createLink'); }
-        }
-
         // ---------- IME 组合输入守卫：拼音/假名组词期间不触发 onChange 与预览 ----------
         // Safari 的 input 先于 compositionend 触发（被守卫拦下），故 end 时补触发一次；
         // Chrome 随后的 input 会再触发一次相同内容，双发无害（预览有 300ms 防抖）。
         var composing = false;
-        function bindCompositionGuard(el, onInput) {
-            el.addEventListener('compositionstart', function () { composing = true; });
-            el.addEventListener('compositionend', function () {
-                composing = false;
-                onInput();
-            });
-            el.addEventListener('input', function () {
-                if (composing) return;
-                onInput();
-            });
-        }
-
-        bindCompositionGuard(textarea, function () { triggerPreview(); fireChange(); });
-        bindCompositionGuard(ce, function () { htmlSync(); fireChange(); });
-        bindCompositionGuard(htmlTa, function () { fireChange(); });
+        textarea.addEventListener('compositionstart', function () { composing = true; });
+        textarea.addEventListener('compositionend', function () {
+            composing = false;
+            triggerPreview();
+            fireChange();
+        });
+        textarea.addEventListener('input', function () {
+            if (composing) return;
+            triggerPreview();
+            fireChange();
+        });
 
         textarea.addEventListener('keydown', handleMdKeys);
-        ce.addEventListener('keydown', handleHtmlKeys);
-        htmlTa.addEventListener('keydown', handleHtmlKeys);
-
         bindUploadDnd(textarea);
-        bindUploadDnd(ce);
-        bindUploadDnd(htmlTa);
-
-        try { document.execCommand('styleWithCSS', false, false); } catch (e) { /* noop */ }
 
         // ---------- 初始化内容 ----------
 
-        if (opts.content) {
-            if (currentType === 'markdown') textarea.value = opts.content;
-            else { ce.innerHTML = opts.content; htmlSync(); }
-        }
-        if (currentType === 'markdown') triggerPreview(true);
+        if (opts.content) textarea.value = opts.content;
+        triggerPreview(true);
 
         // ---------- 实例 API ----------
 
-        function getContent() {
-            if (currentType === 'markdown') return textarea.value;
-            return sourceMode ? htmlTa.value : ce.innerHTML;
-        }
-
         return {
-            getContent: getContent,
+            getContent: function () { return textarea.value; },
             setContent: function (v) {
-                if (currentType === 'markdown') {
-                    textarea.value = v || '';
-                    triggerPreview(true);
-                } else {
-                    ce.innerHTML = v || '';
-                    htmlSync();
+                textarea.value = v || '';
+                triggerPreview(true);
+            },
+            getType: function () { return 'markdown'; },
+            // v2.0.0 起为纯 Markdown 编辑器；setType 保留为兼容性空操作
+            setType: function (t) {
+                if (t !== 'markdown' && typeof console !== 'undefined' && console.warn) {
+                    console.warn('KlockEditor v2: HTML rich-text mode was removed; setType("' + t + '") is a no-op.');
                 }
             },
-            getType: function () { return currentType; },
-            setType: setType,
-            focus: function () {
-                (currentType === 'markdown' ? textarea : (sourceMode ? htmlTa : ce)).focus();
-            },
+            focus: function () { textarea.focus(); },
             destroy: function () {
                 destroyed = true;
                 activeEditors--;
-                document.removeEventListener('selectionchange', onDocSelectionChange);
                 if (previewTimer) clearTimeout(previewTimer);
                 if (root.parentNode) root.parentNode.removeChild(root);
                 if (activeEditors === 0 && toastContainer && toastContainer.parentNode) {

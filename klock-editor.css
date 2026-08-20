@@ -142,45 +142,6 @@
   --klock-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
-/* ====================== 模式切换标签 ====================== */
-
-.klock-editor-root .klock-editor-type-tabs {
-  display: flex;
-  gap: 2px;
-  margin-bottom: var(--klock-space-3);
-  padding: 3px;
-  background: color-mix(in srgb, var(--klock-text-1) 5%, transparent);
-  border-radius: var(--klock-radius-full);
-  width: fit-content;
-}
-
-.klock-editor-root .klock-tab-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 16px;
-  font-size: 13.5px;
-  font-weight: 550;
-  font-family: inherit;
-  color: var(--klock-text-2);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all var(--klock-transition-fast);
-  border-radius: var(--klock-radius-full);
-}
-
-.klock-editor-root .klock-tab-btn:hover {
-  color: var(--klock-text-1);
-}
-
-.klock-editor-root .klock-tab-btn.active {
-  color: var(--klock-text-1);
-  background: var(--klock-surface);
-  box-shadow: var(--klock-shadow-sm);
-  font-weight: 600;
-}
-
 /* ====================== 编辑器容器 ====================== */
 
 .klock-editor-root .klock-editor-wrap {
@@ -253,14 +214,9 @@
   flex: 1;
 }
 
-/* 仅编辑：隐藏预览栏（仅对 Markdown 双 pane 编辑器生效） */
+/* 仅编辑：隐藏预览栏 */
 .klock-editor-root .klock-editor-body:not(.split):not(.preview-only) .klock-editor-pane:last-child {
   display: none;
-}
-
-/* HTML 富文本编辑器为单 pane，不受"隐藏预览栏"规则影响 */
-.klock-editor-root .klock-editor-body:not(.split):not(.preview-only) > .klock-editor-pane-html:last-child {
-  display: flex;
 }
 
 /* 仅预览：隐藏编辑栏 */
@@ -308,45 +264,6 @@
 
 .klock-editor-root .klock-editor-muted {
   color: var(--klock-text-3);
-}
-
-/* HTML 富文本 contenteditable */
-.klock-editor-root .klock-html-editor {
-  flex: 1;
-  padding: var(--klock-space-4) var(--klock-space-5);
-  outline: none;
-  min-height: 400px;
-  overflow-y: auto;
-  font-size: 15px;
-  line-height: var(--klock-leading-normal);
-  color: var(--klock-text-1);
-}
-
-.klock-editor-root .klock-html-editor:empty::before {
-  content: attr(data-placeholder);
-  color: var(--klock-text-3);
-  pointer-events: none;
-}
-
-/* 源码模式：隐藏富文本 pane（!important 覆盖上方非分屏规则对 pane-html 的 display:flex） */
-.klock-editor-root .klock-editor-wrap.source-mode .klock-editor-pane-html {
-  display: none !important;
-}
-
-/* HTML 源码 textarea */
-.klock-editor-root .klocke-html-src {
-  width: 100%;
-  min-height: 400px;
-  padding: var(--klock-space-4) var(--klock-space-5);
-  font-family: var(--klock-font-mono);
-  font-size: 14px;
-  line-height: var(--klock-leading-relaxed);
-  color: var(--klock-text-1);
-  background: transparent;
-  border: none;
-  outline: none;
-  resize: vertical;
-  box-sizing: border-box;
 }
 
 /* ====================== 全屏 ====================== */

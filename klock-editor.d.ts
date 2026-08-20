@@ -1,15 +1,11 @@
 /**
  * KlockEditor TypeScript 类型声明
- * KlockEditor — Standalone dual-mode editor (Markdown + HTML rich text)
+ * KlockEditor — Standalone Markdown editor
  * © 2026 KlockTX · MIT
  */
 
-export type KlockEditorType = 'markdown' | 'html';
-
 export interface KlockEditorOptions {
-    /** 初始模式，默认 'markdown' */
-    type?: KlockEditorType;
-    /** 初始内容（Markdown 文本或 HTML） */
+    /** 初始内容（Markdown 文本） */
     content?: string;
     /** Markdown 编辑区占位文案 */
     placeholder?: string;
@@ -27,22 +23,22 @@ export interface KlockEditorOptions {
     uploadFn?: (file: File) => Promise<string>;
     /** 附加到预览/上传请求的 CSRF 令牌 */
     csrfToken?: string;
-    /** 内容或模式变化回调 */
-    onChange?: (content: string, type: KlockEditorType) => void;
+    /** 内容变化回调 */
+    onChange?: (content: string) => void;
     /** Ctrl/Cmd+S 回调 */
-    onSave?: (content: string, type: KlockEditorType) => void;
+    onSave?: (content: string) => void;
 }
 
 export interface KlockEditorInstance {
-    /** 当前内容（MD 模式返回 MD 文本，HTML 模式返回 HTML） */
+    /** 当前 Markdown 文本 */
     getContent(): string;
     /** 设置内容并刷新预览 */
     setContent(value: string): void;
-    /** 当前模式 */
-    getType(): KlockEditorType;
-    /** 切换 'markdown' / 'html' */
-    setType(type: KlockEditorType): void;
-    /** 聚焦当前编辑区 */
+    /** 恒返回 'markdown'（v2.0.0 起为纯 Markdown 编辑器） */
+    getType(): 'markdown';
+    /** v2.0.0 起为兼容性空操作（HTML 富文本模式已移除） */
+    setType(type: 'markdown'): void;
+    /** 聚焦编辑区 */
     focus(): void;
     /** 移除 DOM 与所有事件监听 */
     destroy(): void;

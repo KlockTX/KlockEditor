@@ -25,7 +25,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KlockEditor 独立编辑器 · 演示</title>
+<title>KlockEditor Markdown 编辑器 · 演示</title>
 <link rel="stylesheet" href="klock-editor.css">
 <style>
   body {
@@ -58,7 +58,7 @@
   <div class="demo-head">
     <div>
       <h1>KlockEditor 独立编辑器</h1>
-      <p>双模式（Markdown / HTML 富文本）· 零依赖 · 双击本文件即可离线体验 · 主题跟随系统 · MIT</p>
+      <p>纯 Markdown · 零依赖 · 双击本文件即可离线体验 · 主题跟随系统 · MIT</p>
     </div>
     <div class="demo-actions">
       <button class="demo-btn" id="btn-log">打印内容到控制台</button>
@@ -89,7 +89,6 @@
       '',
       '## 主要特性',
       '',
-      '- Markdown 与 HTML 富文本双模式切换',
       '- 实时分屏预览（无后端时使用内置迷你渲染器）',
       '- 拖拽 / 粘贴图片上传（配置 `uploadUrl` 后生效）',
       '- 快捷键：`Ctrl+B` 粗体 / `Ctrl+I` 斜体 / `Ctrl+K` 链接 / `Ctrl+S` 保存',
@@ -112,27 +111,27 @@
       '| 主题化 | 覆盖 `.klock-editor-root` 上的 `--klock-*` 变量即可 |',
       '| UMD | 浏览器全局 + CommonJS 均可引入 |',
       '',
-      '试试切换到 **HTML 富文本** 模式，或直接拖一张图片进编辑区。'
+      '试试拖一张图片进编辑区，或按 Ctrl+B 加粗文字。'
     ].join('\n'),
 
     // —— 服务端接入示例 ——
     previewUrl: 'server/preview.php',
     uploadUrl:  'server/upload.php',
 
-    onChange: function (content, type) {
+    onChange: function (content) {
       if (logTimer) return;
       logTimer = setTimeout(function () {
         logTimer = null;
-        log('[onChange] type=' + type + ' · length=' + content.length);
+        log('[onChange] length=' + content.length);
       }, 600);
     },
-    onSave: function (content, type) {
-      log('[onSave] type=' + type + ' · length=' + content.length + '（Ctrl/Cmd+S 触发）');
+    onSave: function (content) {
+      log('[onSave] length=' + content.length + '（Ctrl/Cmd+S 触发）');
     }
   });
 
   document.getElementById('btn-log').onclick = function () {
-    log('[getContent] type=' + editor.getType() + '\n' + editor.getContent().substring(0, 400));
+    log('[getContent]\n' + editor.getContent().substring(0, 400));
   };
   document.getElementById('btn-set').onclick = function () {
     editor.setContent('# 新内容\n\n通过 `setContent()` 设置的内容。');
