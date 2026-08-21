@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.2.0 (2026-08-20)
+
+### 双发行版
+
+- 新增可重复构建的双 ZIP 发行：`KlockEditor-v2.2.0-editor.zip`（纯前端）与 `KlockEditor-v2.2.0-full.zip`（前端 + PHP Parsedown 预览/上传）
+- Editor 包不含 PHP、Parsedown 或运行时上传文件；Full 包包含服务端端点、第三方解析器及许可证
+- 新增 `npm run package:editor`、`npm run package:full`、`npm run package`
+
+### 稳定性与安全
+
+- 预览请求使用 AbortController + 请求序号，旧响应不再覆盖新内容
+- `setContent()` 现在触发 `onChange`，与用户输入保持一致
+- 宿主 `onChange` / `onSave` 异常被隔离并记录，不再打断编辑器事件
+- Full 预览端点移除整段 `htmlspecialchars_decode()`，默认开启 Parsedown SafeMode，并限制 Markdown 请求体 2MB
+- Full 上传端点改为严格扩展名/真实 MIME 图片白名单，缺少 fileinfo 时拒绝上传
+- 类型声明明确 `previewFn` 必须返回已净化 HTML（可异步 Promise）
+
 ## 2.1.0 (2026-08-20)
 
 ### 新增（编辑手感六件套）

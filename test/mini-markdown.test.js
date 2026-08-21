@@ -48,7 +48,7 @@ t('代码块内 HTML 被转义', cb.indexOf('&lt;script&gt;') !== -1 && cb.index
 t('正文 HTML 被转义', md('a < b & c').indexOf('&lt;') !== -1);
 
 // —— 版本 ——
-t('VERSION = 2.1.0', K.VERSION === '2.1.0');
+t('VERSION = 2.2.0', K.VERSION === '2.2.0');
 
 console.log('\n结果: ' + passed + ' 通过, ' + failed + ' 失败');
 process.exitCode = failed ? 1 : 0;

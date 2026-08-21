@@ -15,6 +15,8 @@ export interface KlockEditorOptions {
     theme?: 'dark' | 'light';
     /** 设为 false 隐藏底部字数统计状态栏，默认显示 */
     statusBar?: boolean;
+    /** 自定义预览函数；返回已净化 HTML 或 Promise<string>。不可信 HTML 必须由调用方净化。 */
+    previewFn?: (markdown: string) => string | Promise<string>;
     /** 服务端预览端点：POST {content} → {success, html} */
     previewUrl?: string;
     /** 客户端渲染函数 (md) => html，优先于 previewUrl */

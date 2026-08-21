@@ -57,11 +57,12 @@ if ($urlPrefix === null) {
     $urlPrefix = ($dir === '' ? '' : $dir) . '/uploads/';
 }
 
-// 不放行 svg：SVG 可内嵌脚本，直存直出会形成存储型 XSS（uploads/.htaccess 提供纵深防御）
-$allowExt = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'bmp', 'ico'];
-
-// 禁止直传的 HTML 容器型 MIME
-$denyMime = ['text/html', 'application/xhtml+xml', 'application/x-httpd-php', 'image/svg+xml'];
+// 严格真实 MIME 白名单；无法校验时拒绝，避免伪装扩展名进入公开目录
+$allowMime = [
+    'jpg' => ['image/jpeg'], 'jpeg' => ['image/jpeg'], 'png' => ['image/png'],
+    'gif' => ['image/gif'], 'webp' => ['image/webp'], 'avif' => ['image/avif'],
+    'bmp' => ['image/bmp', 'image/x-ms-bmp'], 'ico' => ['image/x-icon', 'image/vnd.microsoft.icon'],
+];
 
 if (empty($_FILES['file'])) {
     http_response_code(400);
@@ -83,22 +84,24 @@ if ($file['size'] <= 0 || $file['size'] > $maxSize) {
 }
 
 $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-if (!in_array($ext, $allowExt, true)) {
+if (!isset($allowMime[$ext])) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => '不支持的文件类型：' . $ext]);
     exit;
 }
 
-// 有 fileinfo 扩展时校验真实 MIME
-if (function_exists('finfo_open')) {
-    $fi = finfo_open(FILEINFO_MIME_TYPE);
-    $mime = finfo_file($fi, $file['tmp_name']);
-    finfo_close($fi);
-    if (in_array($mime, $denyMime, true)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => '非法文件类型']);
-        exit;
-    }
+if (!function_exists('finfo_open')) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => '服务器缺少 MIME 校验能力']);
+    exit;
+}
+$fi = finfo_open(FILEINFO_MIME_TYPE);
+$mime = finfo_file($fi, $file['tmp_name']);
+finfo_close($fi);
+if (!in_array($mime, $allowMime[$ext], true)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => '文件内容与扩展名不匹配']);
+    exit;
 }
 
 $dir = __DIR__ . '/uploads';

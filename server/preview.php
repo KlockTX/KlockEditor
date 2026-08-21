@@ -46,6 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $content = $_POST['content'] ?? '';
+if (!is_string($content) || strlen($content) > 2 * 1024 * 1024) {
+    http_response_code(413);
+    echo json_encode(['success' => false, 'message' => '内容过大（≤2MB）'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 /** preg_replace_callback 安全包装：PCRE 超限返回 null 时保留原值 */
 function klocke_preg_safe($result, string $original): string {
@@ -65,12 +70,11 @@ function klocke_markdown_to_html(string $content): string {
             'quotes' => false,
             'lists' => ['tasks' => true],
         ]);
-        $parsedown->setSafeMode(false);
+        $parsedown->setSafeMode(true);
         $parsedown->setBreaksEnabled(true);
         $parsedown->setUrlsLinked(true);
     }
 
-    $content = htmlspecialchars_decode($content, ENT_QUOTES);
     $content = str_replace(["\r\n", "\r"], "\n", $content);
     $content = str_replace("｜", "|", $content);
 

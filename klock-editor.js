@@ -47,7 +47,7 @@
 (function () {
     'use strict';
 
-    var VERSION = '2.1.0';
+    var VERSION = '2.2.0';
 
     // ====================== 内联图标（Lucide 风格，24x24 描边） ======================
 
@@ -294,33 +294,49 @@
 
         // ---------- 预览 ----------
 
+        var previewRequestId = 0;
+        var previewController = null;
+
         function renderPreview(content) {
+            var requestId = ++previewRequestId;
+            if (previewController && typeof previewController.abort === 'function') previewController.abort();
+            previewController = null;
+
+            function isCurrent() {
+                return !destroyed && requestId === previewRequestId;
+            }
+            function write(html) {
+                if (isCurrent()) preview.innerHTML = html || '';
+            }
             if (typeof opts.previewFn === 'function') {
-                preview.innerHTML = opts.previewFn(content) || '';
+                try {
+                    Promise.resolve(opts.previewFn(content)).then(function (html) {
+                        write(html || miniMarkdown(content));
+                    }).catch(function () { write(miniMarkdown(content)); });
+                } catch (e) { write(miniMarkdown(content)); }
                 return;
             }
             if (opts.previewUrl) {
                 var fd = new FormData();
                 fd.append('content', content);
                 if (opts.csrfToken) fd.append('csrf_token', opts.csrfToken);
+                var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+                previewController = controller;
                 fetch(opts.previewUrl, {
-                    method: 'POST',
-                    body: fd,
-                    credentials: 'same-origin',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    method: 'POST', body: fd, credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: controller ? controller.signal : undefined
                 }).then(function (r) {
                     if (!r.ok) throw new Error('HTTP ' + r.status);
                     return r.json();
                 }).then(function (j) {
-                    if (destroyed) return;
-                    preview.innerHTML = (j && j.html) ? j.html : miniMarkdown(content);
-                }).catch(function () {
-                    // 服务端不可用或响应异常时回退内置渲染器，保证离线可用
-                    if (!destroyed) preview.innerHTML = miniMarkdown(content);
+                    write(j && j.success && j.html ? j.html : miniMarkdown(content));
+                }).catch(function (err) {
+                    if (!err || err.name !== 'AbortError') write(miniMarkdown(content));
                 });
                 return;
             }
-            preview.innerHTML = miniMarkdown(content);
+            write(miniMarkdown(content));
         }
 
         // ---------- 统计 / 工具栏状态 ----------
@@ -608,12 +624,20 @@
 
         // ---------- 变更回调 ----------
 
+        function reportCallbackError(err) {
+            if (typeof console !== 'undefined' && console.error) console.error('KlockEditor callback error:', err);
+        }
+
         function fireChange() {
-            if (typeof opts.onChange === 'function') opts.onChange(textarea.value);
+            if (typeof opts.onChange === 'function') {
+                try { opts.onChange(textarea.value); } catch (e) { reportCallbackError(e); }
+            }
         }
 
         function fireSave() {
-            if (typeof opts.onSave === 'function') opts.onSave(textarea.value);
+            if (typeof opts.onSave === 'function') {
+                try { opts.onSave(textarea.value); } catch (e) { reportCallbackError(e); }
+            }
         }
 
         // ---------- 事件绑定 ----------
@@ -684,6 +708,9 @@
             setContent: function (v) {
                 textarea.value = v || '';
                 triggerPreview(true);
+                updateStats();
+                syncMdToolbarState();
+                fireChange();
             },
             getType: function () { return 'markdown'; },
             // v2.0.0 起为纯 Markdown 编辑器；setType 保留为兼容性空操作

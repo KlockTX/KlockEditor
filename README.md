@@ -72,6 +72,19 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 });
 ```
 
+### 发行版选择
+
+当前 v2.x 提供两个 ZIP 发行版；二者使用同一套前端 API，Full 不是 HTML 富文本版：
+
+| 发行版 | 内容 | 适用场景 |
+|---|---|---|
+| **Editor-only** | JS/CSS/TS 声明、内置安全兜底渲染器、离线 demo、文档 | 静态站点、前端项目、无需 PHP |
+| **Full** | Editor-only 全部内容 + `server/preview.php`、`server/upload.php`、Parsedown 与许可证 | PHP 服务端完整 Markdown 渲染和图片上传 |
+
+构建命令：`npm run package:editor`、`npm run package:full` 或 `npm run package`。Editor-only 不包含 PHP；Full 需要通过 PHP Web 服务器访问，`server/uploads/` 需要写权限。两个端点默认无鉴权，生产环境请自行加入登录态、CSRF、限流、配额及 HTML 净化。HTML 富文本双模式的最后版本是 [v1.0.2](https://github.com/KlockTX/KlockEditor/releases/tag/v1.0.2)。
+
+预览优先级为 `previewFn → previewUrl → 内置 miniMarkdown`；`previewFn` 和服务端返回的 HTML 必须已经过可信净化。上传优先级为 `uploadFn → uploadUrl`。
+
 ### 配置项
 
 | 选项 | 类型 | 默认 | 说明 |
@@ -182,6 +195,19 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
   uploadUrl:  'server/upload.php'     // POST FormData{file} → {success, url}
 });
 ```
+
+### Distribution choices
+
+v2.x ships two ZIP distributions with the same frontend API. Full is **not** the old HTML rich-text mode:
+
+| Distribution | Contents | Use case |
+|---|---|---|
+| **Editor-only** | JS/CSS/TypeScript declarations, safe built-in fallback renderer, offline demo, docs | Static sites and frontend projects without PHP |
+| **Full** | Everything in Editor-only plus `server/preview.php`, `server/upload.php`, Parsedown and licenses | PHP server-side Markdown rendering and image uploads |
+
+Build with `npm run package:editor`, `npm run package:full`, or `npm run package`. Editor-only contains no PHP. Full requires a PHP web server and a writable `server/uploads/` directory. Both endpoints are unauthenticated by default; production deployments must add authentication, CSRF, rate limiting, quotas, and HTML sanitization. The last HTML dual-mode release is [v1.0.2](https://github.com/KlockTX/KlockEditor/releases/tag/v1.0.2).
+
+Preview priority is `previewFn → previewUrl → built-in miniMarkdown`; `previewFn` and server-returned HTML must be trusted/sanitized. Upload priority is `uploadFn → uploadUrl`.
 
 ### Options
 
