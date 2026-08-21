@@ -84,6 +84,12 @@
 
 /* ====================== 深色（跟随系统，可被宿主覆盖） ====================== */
 
+@media (max-width: 720px) {
+  .klock-editor-root .klock-editor-body.split { flex-direction: column; }
+  .klock-editor-root .klock-editor-pane + .klock-editor-pane { border-left: none; border-top: 0.5px solid var(--klock-divider); }
+  .klock-editor-root .klock-editor-preview { min-height: 240px; }
+}
+
 @media (prefers-color-scheme: dark) {
   .klock-editor-root:not([data-theme]) {
     --klock-primary: #0a84ff;
@@ -239,7 +245,8 @@
   border-left: 0.5px solid var(--klock-divider);
 }
 
-.klock-editor-root .klock-editor-textarea {
+.klock-editor-root .klock-editor-textarea,
+.klock-editor-root .klock-editor-wysiwyg {
   width: 100%;
   flex: 1;
   border: none;
@@ -255,6 +262,33 @@
   border-radius: 0;
   box-sizing: border-box;
 }
+
+.klock-editor-root .klock-editor-wysiwyg {
+  overflow-y: auto;
+  cursor: text;
+  white-space: normal;
+}
+
+.klock-editor-root .klock-editor-wysiwyg .ProseMirror {
+  min-height: 100%;
+  outline: none;
+}
+
+.klock-editor-root .klock-editor-wysiwyg .ProseMirror p:first-child { margin-top: 0; }
+.klock-editor-root .klock-editor-wysiwyg .ProseMirror pre {
+  padding: var(--klock-space-3);
+  background: var(--klock-surface-2);
+  border-radius: var(--klock-radius-md);
+  overflow-x: auto;
+}
+.klock-editor-root .klock-editor-wysiwyg .ProseMirror blockquote {
+  margin: var(--klock-space-3) 0;
+  padding-left: var(--klock-space-3);
+  border-left: 3px solid var(--klock-primary);
+  color: var(--klock-text-2);
+}
+.klock-editor-root .klock-editor-wysiwyg .ProseMirror img { max-width: 100%; height: auto; }
+.klock-editor-root .klock-editor-wysiwyg .ProseMirror-selectednode { outline: 2px solid var(--klock-primary); }
 
 .klock-editor-root .klock-editor-preview {
   padding: var(--klock-space-5);

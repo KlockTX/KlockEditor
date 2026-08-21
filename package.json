@@ -1,22 +1,25 @@
 {
   "name": "klock-editor",
-  "version": "2.2.0",
-  "description": "Standalone Markdown editor with split preview, zero dependencies. 独立 Markdown 编辑器，零依赖。",
+  "version": "3.0.0",
+  "description": "Standalone Markdown editor with source and Markdown-native WYSIWYG modes. 独立 Markdown 编辑器，支持源码与原生所见即所得。",
   "main": "klock-editor.js",
   "types": "klock-editor.d.ts",
   "files": [
     "klock-editor.js",
+    "klock-editor-wysiwyg.js",
     "klock-editor.css",
     "klock-editor.d.ts",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.txt"
   ],
   "scripts": {
-    "test": "node test/mini-markdown.test.js",
-    "package:editor": "node scripts/package.js",
-    "package:full": "node scripts/package.js",
-    "package": "node scripts/package.js"
+    "test": "node test/mini-markdown.test.js && node test/wysiwyg-roundtrip.test.mjs",
+    "package:editor": "node scripts/package.js editor",
+    "package:full": "node scripts/package.js full",
+    "package": "node scripts/package.js all",
+    "build:wysiwyg": "node scripts/build-wysiwyg.js"
   },
   "keywords": [
     "editor",
@@ -34,5 +37,21 @@
   "bugs": {
     "url": "https://github.com/KlockTX/KlockEditor/issues"
   },
-  "homepage": "https://github.com/KlockTX/KlockEditor#readme"
+  "homepage": "https://github.com/KlockTX/KlockEditor#readme",
+  "dependencies": {
+    "markdown-it": "14.3.0",
+    "prosemirror-commands": "1.7.1",
+    "prosemirror-history": "1.4.1",
+    "prosemirror-inputrules": "1.5.1",
+    "prosemirror-keymap": "1.2.3",
+    "prosemirror-markdown": "1.13.2",
+    "prosemirror-model": "1.25.4",
+    "prosemirror-schema-basic": "1.2.4",
+    "prosemirror-schema-list": "1.5.1",
+    "prosemirror-state": "1.4.4",
+    "prosemirror-view": "1.41.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.9"
+  }
 }

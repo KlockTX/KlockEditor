@@ -47,7 +47,7 @@
 (function () {
     'use strict';
 
-    var VERSION = '2.2.0';
+    var VERSION = '3.0.0';
 
     // ====================== 内联图标（Lucide 风格，24x24 描边） ======================
 
@@ -230,6 +230,9 @@
         var previewTimer = null;
         var lastPreview = null;
         var destroyed = false;
+        var editorMode = opts.editorMode === 'wysiwyg' ? 'wysiwyg' : 'source';
+        var wysiwyg = null;
+        var wysiwygLoaded = false;
 
         // ---------- DOM 构建 ----------
 
@@ -256,13 +259,16 @@
             '    <button type="button" class="klock-editor-btn" data-md-btn="hr" title="分隔线">' + icon('minus') + '</button>' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="table" title="表格">' + icon('table') + '</button>' +
             '    <span class="klock-editor-divider"></span>' +
+            '    <button type="button" class="klock-editor-btn active" data-editor-mode="source" title="Markdown 源码">' + icon('fileText') + '</button>' +
+            '    <button type="button" class="klock-editor-btn" data-editor-mode="wysiwyg" title="Markdown 所见即所得">' + icon('eye') + '</button>' +
+            '    <span class="klock-editor-divider"></span>' +
             '    <button type="button" class="klock-editor-btn" data-md-view="edit" title="仅编辑">' + icon('pencil') + '</button>' +
             '    <button type="button" class="klock-editor-btn active" data-md-view="split" title="分屏">' + icon('columns') + '</button>' +
             '    <button type="button" class="klock-editor-btn" data-md-view="preview" title="仅预览">' + icon('eye') + '</button>' +
             '    <button type="button" class="klock-editor-btn" data-md-fullscreen title="全屏">' + icon('maximize') + '</button>' +
             '  </div>' +
             '  <div class="klock-editor-body split">' +
-            '    <div class="klock-editor-pane"><textarea class="klock-editor-textarea" name="klock_editor_markdown" aria-label="Markdown 编辑区" placeholder="' + escapeHtml(opts.placeholder || '在此输入 Markdown 正文... 支持拖拽/粘贴图片上传') + '"></textarea></div>' +
+            '    <div class="klock-editor-pane klock-editor-source-pane"><textarea class="klock-editor-textarea" name="klock_editor_markdown" aria-label="Markdown 编辑区" placeholder="' + escapeHtml(opts.placeholder || '在此输入 Markdown 正文... 支持拖拽/粘贴图片上传') + '"></textarea><div class="klock-editor-wysiwyg" role="textbox" aria-label="Markdown 所见即所得编辑区" hidden></div></div>' +
             '    <div class="klock-editor-pane"><div class="klock-editor-preview klock-markdown"><div class="klock-editor-muted">实时预览区...</div></div></div>' +
             '  </div>' +
             '  <div class="klock-editor-status">' +
@@ -276,6 +282,8 @@
 
         var mdWrap = root.querySelector('.klocke-md');
         var textarea = root.querySelector('.klock-editor-textarea');
+        var sourcePane = root.querySelector('.klock-editor-source-pane');
+        var wysiwygHost = root.querySelector('.klock-editor-wysiwyg');
         var preview = root.querySelector('.klock-editor-preview');
         var mdBody = root.querySelector('.klock-editor-body');
         var statusBar = root.querySelector('.klock-editor-status');
@@ -339,6 +347,91 @@
             write(miniMarkdown(content));
         }
 
+        // ---------- WYSIWYG 模式 ----------
+
+        function loadWysiwygBundle(done) {
+            if (window.KlockWysiwyg) { done(); return; }
+            var existing = document.querySelector('script[data-klock-wysiwyg]');
+            if (existing) {
+                existing.addEventListener('load', done, { once: true });
+                existing.addEventListener('error', function () { showToast('WYSIWYG 模块加载失败', 'error'); }, { once: true });
+                return;
+            }
+            var script = document.createElement('script');
+            script.src = opts.wysiwygUrl || 'klock-editor-wysiwyg.js';
+            script.async = true;
+            script.setAttribute('data-klock-wysiwyg', '');
+            script.onload = done;
+            script.onerror = function () {
+                showToast('WYSIWYG 模块加载失败，已保留源码模式', 'error');
+                editorMode = 'source';
+                root.querySelectorAll('[data-editor-mode]').forEach(function (b) { b.classList.toggle('active', b.dataset.editorMode === 'source'); });
+            };
+            document.head.appendChild(script);
+        }
+
+        function commitWysiwyg(markdown) {
+            textarea.value = markdown;
+            triggerPreview(true);
+            fireChange();
+        }
+
+        function syncWysiwygToolbarState() {
+            if (!wysiwyg || editorMode !== 'wysiwyg') return;
+            var states = wysiwyg.stateForToolbar();
+            root.querySelectorAll('[data-md-btn]').forEach(function (b) {
+                if (b.dataset.mdBtn in states) b.classList.toggle('active', !!states[b.dataset.mdBtn]);
+            });
+        }
+
+        function initWysiwyg(done) {
+            loadWysiwygBundle(function () {
+                if (!window.KlockWysiwyg) return;
+                if (!wysiwyg) {
+                    wysiwyg = new window.KlockWysiwyg.WysiwygController({
+                        host: wysiwygHost,
+                        markdown: textarea.value,
+                        onCommit: commitWysiwyg,
+                        onFocus: syncWysiwygToolbarState
+                    });
+                    bindUploadDnd(wysiwygHost);
+                }
+                wysiwygLoaded = true;
+                done();
+            });
+        }
+
+        function setEditorMode(mode) {
+            if (mode !== 'source' && mode !== 'wysiwyg') return;
+            if (mode === editorMode && (mode !== 'wysiwyg' || wysiwygLoaded)) return;
+            if (mode === 'wysiwyg') {
+                initWysiwyg(function () {
+                    var unsupported = window.KlockWysiwyg.detectUnsupportedMarkdown(textarea.value);
+                    if (unsupported.length) {
+                        showToast('该文档包含 WYSIWYG 暂不支持的语法：' + unsupported.join('、'), 'info');
+                        return;
+                    }
+                    wysiwyg.setMarkdown(textarea.value);
+                    editorMode = 'wysiwyg';
+                    mdWrap.setAttribute('data-editor-mode', 'wysiwyg');
+                    textarea.setAttribute('hidden', '');
+                    wysiwygHost.removeAttribute('hidden');
+                    root.querySelectorAll('[data-editor-mode]').forEach(function (b) { b.classList.toggle('active', b.dataset.editorMode === 'wysiwyg'); });
+                    wysiwyg.focus();
+                    syncMdToolbarState();
+                });
+                return;
+            }
+            if (wysiwyg) commitWysiwyg(window.KlockWysiwyg.serializeMarkdown(wysiwyg.getState().doc));
+            editorMode = 'source';
+            mdWrap.setAttribute('data-editor-mode', 'source');
+            wysiwygHost.setAttribute('hidden', '');
+            textarea.removeAttribute('hidden');
+            root.querySelectorAll('[data-editor-mode]').forEach(function (b) { b.classList.toggle('active', b.dataset.editorMode === 'source'); });
+            textarea.focus();
+            syncMdToolbarState();
+        }
+
         // ---------- 统计 / 工具栏状态 ----------
 
         function updateStats() {
@@ -355,6 +448,7 @@
         // 光标所在位置推断 Markdown 语法状态，同步工具栏按钮高亮
         // 行内标记（**/*/~~/`）用「光标前出现奇数次即在内」的启发式判断
         function syncMdToolbarState() {
+            if (editorMode === 'wysiwyg') { syncWysiwygToolbarState(); return; }
             if (destroyed) return;
             var pos = textarea.selectionStart;
             var before = textarea.value.slice(0, pos);
@@ -585,7 +679,9 @@
             showToast('上传图片中...', 'info');
             doUpload(file).then(function (url) {
                 if (destroyed) return;
-                insert('\n![图片](' + url + ')\n');
+                if (!/^https?:\/\/|^\/|^\.\//i.test(url || '')) throw new Error('上传接口返回了不安全的图片 URL');
+                if (editorMode === 'wysiwyg' && wysiwyg) wysiwyg.insertImage(url);
+                else insert('\n![图片](' + url + ')\n');
                 showToast('图片已插入', 'success');
             }).catch(function (err) {
                 showToast((err && err.message) || '上传失败', 'error');
@@ -645,7 +741,25 @@
         root.addEventListener('click', function (e) {
             var btn = e.target.closest('button');
             if (!btn) return;
-            if (btn.dataset.mdBtn) { mdCommand(btn.dataset.mdBtn); return; }
+            if (btn.dataset.editorMode) { setEditorMode(btn.dataset.editorMode); return; }
+            if (btn.dataset.mdBtn) {
+                if (editorMode === 'wysiwyg' && wysiwyg) {
+                    var c = btn.dataset.mdBtn;
+                    if (c === 'bold') wysiwyg.toggleBold();
+                    else if (c === 'italic') wysiwyg.toggleItalic();
+                    else if (c === 'strike') wysiwyg.toggleStrike();
+                    else if (c === 'code') wysiwyg.toggleCode();
+                    else if (c === 'h1' || c === 'h2' || c === 'h3') wysiwyg.heading(+c.slice(1));
+                    else if (c === 'quote') wysiwyg.quote();
+                    else if (c === 'ul') wysiwyg.bulletList();
+                    else if (c === 'ol') wysiwyg.orderedList();
+                    else if (c === 'hr') wysiwyg.insertRule();
+                    else if (c === 'link') { var href = prompt('请输入链接 URL：', 'https://'); if (href) wysiwyg.insertLink(href); }
+                    else if (c === 'image') { var src = prompt('请输入图片 URL：', ''); if (src) wysiwyg.insertImage(src); }
+                    syncWysiwygToolbarState();
+                } else mdCommand(btn.dataset.mdBtn);
+                return;
+            }
             if (btn.dataset.mdView) { setViewMode(btn.dataset.mdView); return; }
             if (btn.hasAttribute('data-md-fullscreen')) { toggleFullscreen(); return; }
         });
@@ -691,7 +805,9 @@
 
         // 光标移动（无输入）时同步工具栏状态
         function onDocSelectionChange() {
-            if (destroyed || document.activeElement !== textarea) return;
+            if (destroyed) return;
+            if (editorMode === 'wysiwyg') { syncWysiwygToolbarState(); return; }
+            if (document.activeElement !== textarea) return;
             syncMdToolbarState();
         }
         document.addEventListener('selectionchange', onDocSelectionChange);
@@ -700,6 +816,7 @@
 
         if (opts.content) textarea.value = opts.content;
         triggerPreview(true);
+        if (editorMode === 'wysiwyg') setEditorMode('wysiwyg');
 
         // ---------- 实例 API ----------
 
@@ -707,21 +824,26 @@
             getContent: function () { return textarea.value; },
             setContent: function (v) {
                 textarea.value = v || '';
+                if (wysiwyg) wysiwyg.setMarkdown(textarea.value);
                 triggerPreview(true);
                 updateStats();
                 syncMdToolbarState();
                 fireChange();
             },
             getType: function () { return 'markdown'; },
+            getEditorMode: function () { return editorMode; },
+            setEditorMode: setEditorMode,
             // v2.0.0 起为纯 Markdown 编辑器；setType 保留为兼容性空操作
             setType: function (t) {
                 if (t !== 'markdown' && typeof console !== 'undefined' && console.warn) {
                     console.warn('KlockEditor v2: HTML rich-text mode was removed; setType("' + t + '") is a no-op.');
                 }
             },
-            focus: function () { textarea.focus(); },
+            focus: function () { editorMode === 'wysiwyg' && wysiwyg ? wysiwyg.focus() : textarea.focus(); },
             destroy: function () {
                 destroyed = true;
+                if (previewController && typeof previewController.abort === 'function') previewController.abort();
+                if (wysiwyg) wysiwyg.destroy();
                 activeEditors--;
                 document.removeEventListener('selectionchange', onDocSelectionChange);
                 if (previewTimer) clearTimeout(previewTimer);

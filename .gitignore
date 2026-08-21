@@ -8,6 +8,8 @@ server/uploads/*
 .idea/
 .playwright-mcp/
 dist/
+node_modules/
+.package-staging/
 
 # 本地截图（非项目文件）
 /klock-editor-demo.png

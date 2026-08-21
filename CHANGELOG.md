@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.0.0 (2026-08-21)
+
+### 架构
+
+- 将 ProseMirror + `prosemirror-markdown` 构建为自包含 `klock-editor-wysiwyg.js`，Editor-only 与 Full 共用同一前端 bundle
+- 新增 `src/wysiwyg-controller.js`、Markdown bridge 和 round-trip fixtures
+- 新增 `THIRD-PARTY-NOTICES.txt`，列出打包进 WYSIWYG bundle 的 MIT 依赖
+
+
+### Markdown 原生 WYSIWYG
+
+- 新增 ProseMirror + `prosemirror-markdown` Markdown 原生所见即所得模式
+- 新增 `editorMode: 'source' | 'wysiwyg'`、`getEditorMode()`、`setEditorMode()`；默认源码模式保持 v2 行为
+- WYSIWYG 内部使用文档树/transaction/history，公共 API、表单镜像、回调和保存格式始终是 Markdown 字符串
+- 支持标题、段落、粗体、斜体、删除线、代码、代码块、链接、图片、引用、有序/无序列表、分隔线
+- 对任务列表、表格、脚注、数学公式、原始 HTML 等暂不完全可逆语法，切换前明确提示并保留源码模式，不静默丢失
+- 新增自包含 `klock-editor-wysiwyg.js` bundle 和第三方 MIT 依赖 NOTICE
+
+### 兼容性
+
+- `getType()` 仍返回 `'markdown'`，`setType('html')` 仍为历史兼容 no-op；v1.0.2 仍是旧 HTML 双模式版本
+- Editor-only 与 Full 发行版共用同一 WYSIWYG 前端 bundle；Full 仅增加 PHP/Parsedown 服务端适配
+
 ## 2.2.0 (2026-08-20)
 
 ### 双发行版

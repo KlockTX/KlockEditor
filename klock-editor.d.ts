@@ -4,6 +4,8 @@
  * © 2026 KlockTX · MIT
  */
 
+export type KlockEditorMode = 'source' | 'wysiwyg';
+
 export interface KlockEditorOptions {
     /** 初始内容（Markdown 文本） */
     content?: string;
@@ -15,12 +17,14 @@ export interface KlockEditorOptions {
     theme?: 'dark' | 'light';
     /** 设为 false 隐藏底部字数统计状态栏，默认显示 */
     statusBar?: boolean;
+    /** 编辑表面：源码 textarea（默认）或 Markdown 原生所见即所得 */
+    editorMode?: KlockEditorMode;
+    /** WYSIWYG 自包含 bundle 地址，默认 klock-editor-wysiwyg.js */
+    wysiwygUrl?: string;
     /** 自定义预览函数；返回已净化 HTML 或 Promise<string>。不可信 HTML 必须由调用方净化。 */
     previewFn?: (markdown: string) => string | Promise<string>;
     /** 服务端预览端点：POST {content} → {success, html} */
     previewUrl?: string;
-    /** 客户端渲染函数 (md) => html，优先于 previewUrl */
-    previewFn?: (markdown: string) => string;
     /** 图片上传端点：POST FormData{file} → {success, url} */
     uploadUrl?: string;
     /** 自定义上传 (file) => Promise<url>，优先于 uploadUrl */
@@ -40,6 +44,10 @@ export interface KlockEditorInstance {
     setContent(value: string): void;
     /** 恒返回 'markdown'（v2.0.0 起为纯 Markdown 编辑器） */
     getType(): 'markdown';
+    /** 当前编辑表面 */
+    getEditorMode(): KlockEditorMode;
+    /** 切换 source / Markdown-native WYSIWYG */
+    setEditorMode(mode: KlockEditorMode): void;
     /** v2.0.0 起为兼容性空操作（HTML 富文本模式已移除） */
     setType(type: 'markdown'): void;
     /** 聚焦编辑区 */

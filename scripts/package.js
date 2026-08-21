@@ -9,7 +9,7 @@ const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
 const version = pkg.version;
 const dist = path.join(root, 'dist');
 const stageRoot = path.join(root, '.package-staging');
-const common = ['klock-editor.js', 'klock-editor.css', 'klock-editor.d.ts', 'demo.html', 'README.md', 'CHANGELOG.md', 'LICENSE'];
+const common = ['klock-editor.js', 'klock-editor-wysiwyg.js', 'klock-editor.css', 'klock-editor.d.ts', 'demo.html', 'README.md', 'CHANGELOG.md', 'LICENSE', 'THIRD-PARTY-NOTICES.txt'];
 const server = ['server/preview.php', 'server/upload.php', 'server/uploads/.htaccess', 'server/lib/Parsedown.php', 'server/lib/ParsedownExtended.php', 'server/lib/Parsedown-LICENSE.txt', 'server/lib/ParsedownExtended-LICENSE.txt'];
 
 function rm(p) { fs.rmSync(p, { recursive: true, force: true }); }
@@ -25,6 +25,8 @@ function zip(name, files) {
   const stage = path.join(stageRoot, name.replace(/\.zip$/, ''));
   rm(stage); fs.mkdirSync(stage, { recursive: true });
   files.forEach(f => cp(f, stage));
+  if (!files.includes('klock-editor-wysiwyg.js')) throw new Error('WYSIWYG bundle missing from package');
+  if (!files.includes('THIRD-PARTY-NOTICES.txt')) throw new Error('Third-party notices missing from package');
   fs.mkdirSync(dist, { recursive: true });
   const out = path.join(dist, name);
   rm(out);
@@ -37,8 +39,11 @@ function zip(name, files) {
   return out;
 }
 
+const target = process.argv[2] || 'all';
+if (!['editor', 'full', 'all'].includes(target)) throw new Error('Usage: node scripts/package.js [editor|full|all]');
 rm(stageRoot);
-const editor = zip(`KlockEditor-v${version}-editor.zip`, common);
-const full = zip(`KlockEditor-v${version}-full.zip`, common.concat(server));
-console.log('Created:', editor, full);
+const outputs = [];
+if (target === 'editor' || target === 'all') outputs.push(zip(`KlockEditor-v${version}-editor.zip`, common));
+if (target === 'full' || target === 'all') outputs.push(zip(`KlockEditor-v${version}-full.zip`, common.concat(server)));
+console.log('Created:', outputs.join(', '));
 rm(stageRoot);

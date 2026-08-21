@@ -1,0 +1,9 @@
+# Third-party notices
+
+KlockEditor v3.0.0 bundles the following MIT-licensed JavaScript dependencies in `klock-editor-wysiwyg.js`:
+
+- ProseMirror (`prosemirror-model`, `prosemirror-state`, `prosemirror-view`, `prosemirror-history`, `prosemirror-keymap`, `prosemirror-commands`, `prosemirror-inputrules`, `prosemirror-schema-basic`, `prosemirror-schema-list`, `prosemirror-markdown`, `prosemirror-tables`)
+- markdown-it
+- esbuild is a development-time build tool and is not bundled as a runtime dependency.
+
+The Full distribution additionally includes Parsedown and ParsedownExtended under their respective MIT license texts in `server/lib/`.

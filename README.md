@@ -10,11 +10,11 @@
 
 ### 简介
 
-KlockEditor 是一个独立的 Markdown 编辑器组件，提供 **分屏编辑与实时预览**，不依赖任何第三方框架（无 jQuery / Lucide / React），两个文件即可集成。（v2.0.0 起专注 Markdown，此前的 HTML 富文本模式已移除，需要双模式请用 v1.0.2）
+KlockEditor 是一个独立的 Markdown 编辑器组件，提供 **源码编辑、Markdown 原生所见即所得与实时预览**。v3.0.0 的 WYSIWYG 使用 ProseMirror 文档树，但对外输入、保存、回调和 API 始终只使用 Markdown 字符串；它不是旧版 HTML 富文本模式。需要历史 HTML 双模式请使用 v1.0.2。
 
 ### 特性
 
-- **纯 Markdown**：textarea 选区操作 + 300ms 防抖实时预览，工具栏写入可撤销（`Ctrl+Z` 有效）
+- **双编辑表面**：源码 textarea（原文保真）与 Markdown 原生 WYSIWYG（ProseMirror transaction/history）一键切换，公共数据始终是 Markdown
 - **编辑手感**：列表/引用回车自动续行（有序列表自动编号）、任务列表 `- [ ]`、删除线 `~~ ~~`、粘贴 URL 自动成链
 - **状态感知**：工具栏按钮随光标位置高亮；底部状态栏实时统计字符 / 词 / 行
 - **实时预览**：渲染器三级可插拔（自定义函数 → 服务端 → 内置迷你渲染器，服务端失败自动回退）
@@ -78,10 +78,10 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 
 | 发行版 | 内容 | 适用场景 |
 |---|---|---|
-| **Editor-only** | JS/CSS/TS 声明、内置安全兜底渲染器、离线 demo、文档 | 静态站点、前端项目、无需 PHP |
+| **Editor-only** | JS/CSS/TS 声明、ProseMirror WYSIWYG bundle、内置安全兜底渲染器、离线 demo、文档 | 静态站点、前端项目、无需 PHP |
 | **Full** | Editor-only 全部内容 + `server/preview.php`、`server/upload.php`、Parsedown 与许可证 | PHP 服务端完整 Markdown 渲染和图片上传 |
 
-构建命令：`npm run package:editor`、`npm run package:full` 或 `npm run package`。Editor-only 不包含 PHP；Full 需要通过 PHP Web 服务器访问，`server/uploads/` 需要写权限。两个端点默认无鉴权，生产环境请自行加入登录态、CSRF、限流、配额及 HTML 净化。HTML 富文本双模式的最后版本是 [v1.0.2](https://github.com/KlockTX/KlockEditor/releases/tag/v1.0.2)。
+构建命令：`npm run build:wysiwyg` 后执行 `npm run package:editor`、`npm run package:full` 或 `npm run package`。Editor-only 不包含 PHP；Full 需要通过 PHP Web 服务器访问，`server/uploads/` 需要写权限。两个端点默认无鉴权，生产环境请自行加入登录态、CSRF、限流、配额及 HTML 净化。WYSIWYG 默认通过 `klock-editor-wysiwyg.js` 延迟加载。任务列表、表格、脚注、数学公式和原始 HTML 等不可逆扩展会阻止切换并保留源码模式。HTML 富文本双模式的最后版本是 [v1.0.2](https://github.com/KlockTX/KlockEditor/releases/tag/v1.0.2)。
 
 预览优先级为 `previewFn → previewUrl → 内置 miniMarkdown`；`previewFn` 和服务端返回的 HTML 必须已经过可信净化。上传优先级为 `uploadFn → uploadUrl`。
 
@@ -94,6 +94,8 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 | `height` | number | `400` | 编辑区最小高度（px） |
 | `theme` | string | 自动 | `'dark'` / `'light'`，缺省跟随系统 |
 | `statusBar` | boolean | `true` | 设为 `false` 隐藏底部字数统计状态栏 |
+| `editorMode` | string | `'source'` | `'source'` 或 `'wysiwyg'`；WYSIWYG 只支持可逆 Markdown 子集 |
+| `wysiwygUrl` | string | `'klock-editor-wysiwyg.js'` | 自包含 WYSIWYG bundle 地址 |
 | `previewUrl` | string | — | 服务端预览端点 |
 | `previewFn` | function | — | 客户端渲染函数 `(md) => html`（优先于 previewUrl） |
 | `uploadUrl` | string | — | 图片上传端点 |
@@ -107,7 +109,9 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 | 方法 | 返回 | 说明 |
 |---|---|---|
 | `getContent()` | string | 当前 Markdown 文本 |
-| `setContent(v)` | — | 设置内容并刷新预览 |
+| `setContent(v)` | — | 设置内容、刷新预览并触发 `onChange` |
+| `getEditorMode()` | string | `'source'` 或 `'wysiwyg'` |
+| `setEditorMode(mode)` | — | 切换源码 / Markdown 原生 WYSIWYG；无法可逆的扩展语法会拒绝切换 |
 | `focus()` | — | 聚焦编辑区 |
 | `destroy()` | — | 移除 DOM 与所有事件监听 |
 
@@ -134,7 +138,7 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 
 ### Introduction
 
-KlockEditor is a standalone Markdown editor component with **split-pane editing and live preview**, zero third-party framework dependencies (no jQuery / Lucide / React). Two files are all you need. (v2.0.0 is Markdown-only; the HTML rich-text mode was removed — use v1.0.2 if you need it.)
+KlockEditor is a standalone Markdown editor with **source editing, Markdown-native WYSIWYG, split view, and live preview**. v3.0.0 uses a ProseMirror document tree internally, but the public input, saved content, callbacks, and API remain Markdown strings. This is not the old HTML rich-text mode; use v1.0.2 for that historical behavior.
 
 ### Features
 
@@ -202,7 +206,7 @@ v2.x ships two ZIP distributions with the same frontend API. Full is **not** the
 
 | Distribution | Contents | Use case |
 |---|---|---|
-| **Editor-only** | JS/CSS/TypeScript declarations, safe built-in fallback renderer, offline demo, docs | Static sites and frontend projects without PHP |
+| **Editor-only** | JS/CSS/TypeScript declarations, ProseMirror WYSIWYG bundle, safe built-in fallback renderer, offline demo, docs | Static sites and frontend projects without PHP |
 | **Full** | Everything in Editor-only plus `server/preview.php`, `server/upload.php`, Parsedown and licenses | PHP server-side Markdown rendering and image uploads |
 
 Build with `npm run package:editor`, `npm run package:full`, or `npm run package`. Editor-only contains no PHP. Full requires a PHP web server and a writable `server/uploads/` directory. Both endpoints are unauthenticated by default; production deployments must add authentication, CSRF, rate limiting, quotas, and HTML sanitization. The last HTML dual-mode release is [v1.0.2](https://github.com/KlockTX/KlockEditor/releases/tag/v1.0.2).
