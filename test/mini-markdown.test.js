@@ -31,6 +31,10 @@ t('mailto 保留', md('[m](mailto:a@b.c)').indexOf('href="mailto:a@b.c"') !== -1
 // —— 常用语法 ——
 t('标题渲染', md('# T').indexOf('<h1>T</h1>') !== -1 && md('## T').indexOf('<h2>') !== -1 && md('### T').indexOf('<h3>') !== -1);
 t('粗体/斜体/行内码', md('**b** *i* `c`').indexOf('<strong>b</strong>') !== -1 && md('**b** *i* `c`').indexOf('<em>i</em>') !== -1 && md('**b** *i* `c`').indexOf('<code>c</code>') !== -1);
+t('删除线渲染', md('~~s~~').indexOf('<del>s</del>') !== -1);
+t('任务列表渲染', md('- [ ] a\n- [x] b').indexOf('type="checkbox"') !== -1);
+t('任务列表勾选状态', md('- [x] done').indexOf('checked') !== -1 && md('- [ ] todo').indexOf('checked') === -1);
+t('任务列表文本保留', md('- [x] done').indexOf('done') !== -1);
 t('无序/有序列表', md('- a\n- b\n\n1. c\n2. d').indexOf('<ul>') !== -1 && md('- a\n- b\n\n1. c\n2. d').indexOf('<ol>') !== -1);
 t('引用块', md('> q').indexOf('<blockquote>') !== -1);
 t('分隔线', md('---').indexOf('<hr>') !== -1);
@@ -44,7 +48,7 @@ t('代码块内 HTML 被转义', cb.indexOf('&lt;script&gt;') !== -1 && cb.index
 t('正文 HTML 被转义', md('a < b & c').indexOf('&lt;') !== -1);
 
 // —— 版本 ——
-t('VERSION = 2.0.0', K.VERSION === '2.0.0');
+t('VERSION = 2.1.0', K.VERSION === '2.1.0');
 
 console.log('\n结果: ' + passed + ' 通过, ' + failed + ' 失败');
 process.exitCode = failed ? 1 : 0;

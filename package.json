@@ -1,6 +1,6 @@
 {
   "name": "klock-editor",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Standalone Markdown editor with split preview, zero dependencies. 独立 Markdown 编辑器，零依赖。",
   "main": "klock-editor.js",
   "types": "klock-editor.d.ts",

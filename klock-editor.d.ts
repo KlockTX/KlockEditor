@@ -13,6 +13,8 @@ export interface KlockEditorOptions {
     height?: number;
     /** 'dark' / 'light'，缺省跟随系统 */
     theme?: 'dark' | 'light';
+    /** 设为 false 隐藏底部字数统计状态栏，默认显示 */
+    statusBar?: boolean;
     /** 服务端预览端点：POST {content} → {success, html} */
     previewUrl?: string;
     /** 客户端渲染函数 (md) => html，优先于 previewUrl */

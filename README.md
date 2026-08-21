@@ -15,6 +15,8 @@ KlockEditor 是一个独立的 Markdown 编辑器组件，提供 **分屏编辑�
 ### 特性
 
 - **纯 Markdown**：textarea 选区操作 + 300ms 防抖实时预览，工具栏写入可撤销（`Ctrl+Z` 有效）
+- **编辑手感**：列表/引用回车自动续行（有序列表自动编号）、任务列表 `- [ ]`、删除线 `~~ ~~`、粘贴 URL 自动成链
+- **状态感知**：工具栏按钮随光标位置高亮；底部状态栏实时统计字符 / 词 / 行
 - **实时预览**：渲染器三级可插拔（自定义函数 → 服务端 → 内置迷你渲染器，服务端失败自动回退）
 - **图片上传**：拖拽 / 粘贴 / 工具栏三种入口，自动插入光标处
 - **视图三态**：仅编辑 / 分屏 / 仅预览，另有全屏模式（Esc 退出）
@@ -78,6 +80,7 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 | `placeholder` | string | 内置 | Markdown 编辑区占位文案 |
 | `height` | number | `400` | 编辑区最小高度（px） |
 | `theme` | string | 自动 | `'dark'` / `'light'`，缺省跟随系统 |
+| `statusBar` | boolean | `true` | 设为 `false` 隐藏底部字数统计状态栏 |
 | `previewUrl` | string | — | 服务端预览端点 |
 | `previewFn` | function | — | 客户端渲染函数 `(md) => html`（优先于 previewUrl） |
 | `uploadUrl` | string | — | 图片上传端点 |
@@ -123,6 +126,8 @@ KlockEditor is a standalone Markdown editor component with **split-pane editing 
 ### Features
 
 - **Markdown-only**: textarea selection manipulation + 300ms debounced live preview; toolbar edits are undoable (`Ctrl+Z` works)
+- **Editing feel**: Enter continues lists/quotes (ordered lists auto-number), task lists `- [ ]`, strikethrough `~~ ~~`, paste-URL-over-selection makes a link
+- **State awareness**: toolbar buttons highlight at the cursor; status bar shows live char/word/line counts
 - **Live preview**: pluggable renderer chain (custom function → server endpoint → built-in mini renderer, with automatic fallback)
 - **Image upload**: drag-and-drop, paste, and toolbar; inserted at the cursor automatically
 - **Three view states**: edit-only / split / preview-only, plus fullscreen (Esc to exit)
@@ -186,6 +191,7 @@ var editor = KlockEditor.create(document.getElementById('editor'), {
 | `placeholder` | string | built-in | Placeholder for the Markdown pane |
 | `height` | number | `400` | Minimum editor height (px) |
 | `theme` | string | auto | `'dark'` / `'light'`; defaults to system |
+| `statusBar` | boolean | `true` | `false` hides the bottom char/word/line status bar |
 | `previewUrl` | string | — | Server-side preview endpoint |
 | `previewFn` | function | — | Client-side renderer `(md) => html` (takes precedence over previewUrl) |
 | `uploadUrl` | string | — | Image upload endpoint |

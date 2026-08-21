@@ -1,6 +1,6 @@
 /*!
- * KlockEditor — 独立双模式编辑器样式（与 klock-editor.js 配套）
- * KlockEditor — Standalone dual-mode editor styles (companion to klock-editor.js)
+ * KlockEditor — 独立 Markdown 编辑器样式（与 klock-editor.js 配套）
+ * KlockEditor — Standalone Markdown editor styles (companion to klock-editor.js)
  *
  * Copyright (c) 2026 KlockTX
  *
@@ -266,6 +266,20 @@
   color: var(--klock-text-3);
 }
 
+/* ====================== 状态栏 ====================== */
+
+.klock-editor-root .klock-editor-status {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--klock-space-4);
+  padding: 5px 14px;
+  font-size: 12px;
+  color: var(--klock-text-3);
+  border-top: 0.5px solid var(--klock-divider);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
 /* ====================== 全屏 ====================== */
 
 .klock-editor-root .klock-editor-wrap.is-fullscreen {
@@ -278,7 +292,8 @@
 }
 
 .klock-editor-root .klock-editor-wrap.is-fullscreen .klock-editor-body {
-  height: calc(100vh - 56px);
+  /* 工具栏 + 状态栏合计约 84px */
+  height: calc(100vh - 84px);
 }
 
 /* ====================== 内置 Toast ====================== */
@@ -369,6 +384,17 @@
 .klock-editor-root .klock-markdown ol { list-style: decimal; }
 .klock-editor-root .klock-markdown li + li { margin-top: var(--klock-space-1); }
 .klock-editor-root .klock-markdown li::marker { color: var(--klock-primary); }
+
+/* 任务列表：去掉圆点，复选框与文本对齐 */
+.klock-editor-root .klock-markdown li.klock-task {
+  list-style: none;
+  margin-left: -1.5em;
+}
+.klock-editor-root .klock-markdown li.klock-task > input[type="checkbox"] {
+  margin-right: 8px;
+  accent-color: var(--klock-primary);
+  vertical-align: -2px;
+}
 
 .klock-editor-root .klock-markdown blockquote {
   padding: var(--klock-space-4) var(--klock-space-5);

@@ -47,13 +47,15 @@
 (function () {
     'use strict';
 
-    var VERSION = '2.0.0';
+    var VERSION = '2.1.0';
 
     // ====================== 内联图标（Lucide 风格，24x24 描边） ======================
 
     var ICONS = {
         bold: '<path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>',
         italic: '<line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/>',
+        strike: '<path d="M16 4c-.5-2-2-3-4-3s-4 1-4 3c0 1.5 1 2.5 3 3"/><path d="M12 20c3.5 0 6-1.5 6-4 0-1-.5-2-2-3"/><line x1="4" x2="20" y1="14" y2="14"/>',
+        checkSquare: '<path d="M21 10.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.5"/><path d="m9 11 3 3L22 4"/>',
         h1: '<path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M17 12l3-2v8"/>',
         h2: '<path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/>',
         h3: '<path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M17.5 10.5c1.7-1 3.5 0 3.5 1.5a2 2 0 0 1-2 2"/><path d="M17.5 17.5c1.7 1 3.5 0 3.5-1.5a2 2 0 0 0-2-2"/>',
@@ -152,7 +154,8 @@
                 })
                 .replace(/`([^`]+)`/g, '<code>$1</code>')
                 .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                .replace(/~~([^~]+)~~/g, '<del>$1</del>');
         }
 
         while (i < lines.length) {
@@ -172,7 +175,17 @@
             }
             if ((m = line.match(/^\s*[-*]\s+(.*)$/))) {
                 var items = [];
-                while (i < lines.length && (m = lines[i].match(/^\s*[-*]\s+(.*)$/))) { items.push('<li>' + inline(m[1]) + '</li>'); i++; }
+                while (i < lines.length && (m = lines[i].match(/^\s*[-*]\s+(.*)$/))) {
+                    // 任务列表：- [ ] / - [x]
+                    var tm = m[1].match(/^\[([ xX])\]\s+(.*)$/);
+                    if (tm) {
+                        items.push('<li class="klock-task"><input type="checkbox" disabled' +
+                            (tm[1] !== ' ' ? ' checked' : '') + '> ' + inline(tm[2]) + '</li>');
+                    } else {
+                        items.push('<li>' + inline(m[1]) + '</li>');
+                    }
+                    i++;
+                }
                 out.push('<ul>' + items.join('') + '</ul>'); continue;
             }
             if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) {
@@ -227,6 +240,7 @@
             '  <div class="klock-editor-toolbar">' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="bold" title="粗体 (Ctrl+B)">' + icon('bold') + '</button>' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="italic" title="斜体 (Ctrl+I)">' + icon('italic') + '</button>' +
+            '    <button type="button" class="klock-editor-btn" data-md-btn="strike" title="删除线 (Ctrl+Shift+X)">' + icon('strike') + '</button>' +
             '    <span class="klock-editor-divider"></span>' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="h1" title="一级标题">' + icon('h1') + '</button>' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="h2" title="二级标题">' + icon('h2') + '</button>' +
@@ -238,6 +252,7 @@
             '    <button type="button" class="klock-editor-btn" data-md-btn="quote" title="引用">' + icon('quote') + '</button>' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="ul" title="无序列表">' + icon('list') + '</button>' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="ol" title="有序列表">' + icon('listOrdered') + '</button>' +
+            '    <button type="button" class="klock-editor-btn" data-md-btn="task" title="任务列表">' + icon('checkSquare') + '</button>' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="hr" title="分隔线">' + icon('minus') + '</button>' +
             '    <button type="button" class="klock-editor-btn" data-md-btn="table" title="表格">' + icon('table') + '</button>' +
             '    <span class="klock-editor-divider"></span>' +
@@ -250,6 +265,11 @@
             '    <div class="klock-editor-pane"><textarea class="klock-editor-textarea" name="klock_editor_markdown" aria-label="Markdown 编辑区" placeholder="' + escapeHtml(opts.placeholder || '在此输入 Markdown 正文... 支持拖拽/粘贴图片上传') + '"></textarea></div>' +
             '    <div class="klock-editor-pane"><div class="klock-editor-preview klock-markdown"><div class="klock-editor-muted">实时预览区...</div></div></div>' +
             '  </div>' +
+            '  <div class="klock-editor-status">' +
+            '    <span class="klocke-stat-chars">0 字符</span>' +
+            '    <span class="klocke-stat-words">0 词</span>' +
+            '    <span class="klocke-stat-lines">1 行</span>' +
+            '  </div>' +
             '</div>';
 
         container.appendChild(root);
@@ -258,6 +278,12 @@
         var textarea = root.querySelector('.klock-editor-textarea');
         var preview = root.querySelector('.klock-editor-preview');
         var mdBody = root.querySelector('.klock-editor-body');
+        var statusBar = root.querySelector('.klock-editor-status');
+        var statChars = root.querySelector('.klocke-stat-chars');
+        var statWords = root.querySelector('.klocke-stat-words');
+        var statLines = root.querySelector('.klocke-stat-lines');
+
+        if (opts.statusBar === false) statusBar.style.display = 'none';
 
         if (opts.height) {
             mdBody.style.minHeight = opts.height + 'px';
@@ -297,7 +323,49 @@
             preview.innerHTML = miniMarkdown(content);
         }
 
+        // ---------- 统计 / 工具栏状态 ----------
+
+        function updateStats() {
+            if (!statChars) return;
+            var v = textarea.value;
+            // 词数 = 拉丁词 + CJK 字（中日韩表意文字与假名按字计）
+            var words = (v.match(/[A-Za-z0-9_'’-]+/g) || []).length +
+                (v.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/g) || []).length;
+            statChars.textContent = v.length + ' 字符';
+            statWords.textContent = words + ' 词';
+            statLines.textContent = (v ? v.split('\n').length : 1) + ' 行';
+        }
+
+        // 光标所在位置推断 Markdown 语法状态，同步工具栏按钮高亮
+        // 行内标记（**/*/~~/`）用「光标前出现奇数次即在内」的启发式判断
+        function syncMdToolbarState() {
+            if (destroyed) return;
+            var pos = textarea.selectionStart;
+            var before = textarea.value.slice(0, pos);
+            var lineStart = before.lastIndexOf('\n') + 1;
+            var nl = textarea.value.indexOf('\n', lineStart);
+            var lineText = textarea.value.slice(lineStart, nl === -1 ? textarea.value.length : nl);
+            var states = {
+                bold: ((before.split('**').length - 1) % 2) === 1,
+                italic: ((before.replace(/\*\*/g, '').split('*').length - 1) % 2) === 1,
+                strike: ((before.split('~~').length - 1) % 2) === 1,
+                code: ((before.split('`').length - 1) % 2) === 1,
+                h1: /^#(?!#)\s/.test(lineText),
+                h2: /^##(?!#)\s/.test(lineText),
+                h3: /^###\s/.test(lineText),
+                quote: /^\s*>/.test(lineText),
+                ul: /^\s*[-*+]\s/.test(lineText),
+                ol: /^\s*\d+[.)]\s/.test(lineText),
+                task: /^\s*[-*+]\s\[[ xX]\]\s/.test(lineText)
+            };
+            root.querySelectorAll('[data-md-btn]').forEach(function (b) {
+                if (b.dataset.mdBtn in states) b.classList.toggle('active', !!states[b.dataset.mdBtn]);
+            });
+        }
+
         function triggerPreview(force) {
+            updateStats();
+            syncMdToolbarState();
             var content = textarea.value;
             if (!force && content === lastPreview) return;
             lastPreview = content;
@@ -370,6 +438,7 @@
             switch (cmd) {
                 case 'bold': wrap('**', '**'); break;
                 case 'italic': wrap('*', '*'); break;
+                case 'strike': wrap('~~', '~~'); break;
                 case 'h1': prefix('# '); break;
                 case 'h2': prefix('## '); break;
                 case 'h3': prefix('### '); break;
@@ -377,6 +446,7 @@
                 case 'quote': prefix('> '); break;
                 case 'ul': prefixLines(function () { return '- '; }); break;
                 case 'ol': prefixLines(function (i) { return (i + 1) + '. '; }); break;
+                case 'task': toggleTask(); break;
                 case 'hr': insert('\n---\n'); break;
                 case 'table': insert('\n| 列1 | 列2 |\n|---|---|\n| 内容 | 内容 |\n'); break;
                 case 'link': {
@@ -390,6 +460,60 @@
                     break;
                 }
             }
+        }
+
+        // ---------- 列表 / 引用自动续行 ----------
+        // Enter 继承当前行的列表/引用前缀；空列表项回车退出列表；代码块内不干预
+
+        function handleEnterContinuation() {
+            var s = getSel();
+            if (s.start !== s.end) return false;
+            // 代码块内（光标前 ``` 出现奇数次）不续行
+            if (((textarea.value.slice(0, s.start).match(/```/g) || []).length % 2) === 1) return false;
+            var ls = textarea.value.lastIndexOf('\n', s.start - 1) + 1;
+            var line = textarea.value.slice(ls, s.start);
+            var m = line.match(/^(\s*)([-*+]\s(?:\[[ xX]\]\s)?|\d+[.)]\s|>\s?)([\s\S]*)$/);
+            if (!m) return false;
+            if (m[3].trim() === '') {
+                // 空列表项 / 空引用：删除前缀，退出该结构
+                undoableInsert(textarea, ls, s.start, '');
+                triggerPreview();
+                fireChange();
+                return true;
+            }
+            var next;
+            var om = m[2].match(/^(\d+)([.)])\s$/);
+            if (om) next = (parseInt(om[1], 10) + 1) + om[2] + ' ';
+            else if (m[2] === '>' || m[2] === '> ') next = '> ';
+            else {
+                var tm = m[2].match(/^([-*+])\s(\[[ xX]\]\s)$/);
+                next = tm ? tm[1] + ' [ ] ' : m[2];
+            }
+            undoableInsert(textarea, s.start, s.end, '\n' + m[1] + next);
+            triggerPreview();
+            fireChange();
+            return true;
+        }
+
+        // ---------- 任务列表 ----------
+
+        function toggleTask() {
+            var s = getSel();
+            var ls = textarea.value.lastIndexOf('\n', s.start - 1) + 1;
+            var le = textarea.value.indexOf('\n', s.end);
+            if (le === -1) le = textarea.value.length;
+            var out = textarea.value.slice(ls, le).split('\n').map(function (line) {
+                var m = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+(.*)$/);
+                var indent = m ? m[1] : '';
+                var content = m ? m[2] : line;
+                var tm = content.match(/^\[[ xX]\]\s+(.*)$/);
+                if (tm) return indent + '- ' + tm[1];          // 已是任务 → 还原为普通列表
+                return indent + '- [ ] ' + content;             // 普通行 → 转为任务
+            }).join('\n');
+            undoableInsert(textarea, ls, le, out);
+            setSel(ls, ls + out.length);
+            triggerPreview();
+            fireChange();
         }
 
         // ---------- 视图模式 / 全屏 ----------
@@ -460,13 +584,25 @@
                 Array.prototype.slice.call(e.dataTransfer.files).forEach(uploadFile);
             });
             el.addEventListener('paste', function (e) {
-                if (!e.clipboardData || !e.clipboardData.items) return;
-                Array.prototype.slice.call(e.clipboardData.items).forEach(function (item) {
-                    if (item.kind === 'file' && /^image\//.test(item.type)) {
-                        var f = item.getAsFile();
-                        if (f) { e.preventDefault(); uploadFile(f); }
+                if (!e.clipboardData) return;
+                // 图片文件 → 上传
+                if (e.clipboardData.items) {
+                    for (var i = 0; i < e.clipboardData.items.length; i++) {
+                        var item = e.clipboardData.items[i];
+                        if (item.kind === 'file' && /^image\//.test(item.type)) {
+                            var f = item.getAsFile();
+                            if (f) { e.preventDefault(); uploadFile(f); return; }
+                        }
                     }
-                });
+                }
+                // 粘贴纯 URL 且编辑区有选区 → 自动包裹为 [选中文本](URL)
+                var s = getSel();
+                if (!s.value) return;
+                var text = e.clipboardData.getData('text/plain');
+                if (text && /^https?:\/\/\S+$/i.test(text.trim())) {
+                    e.preventDefault();
+                    insert('[' + s.value + '](' + text.trim() + ')');
+                }
             });
         }
 
@@ -495,11 +631,17 @@
         });
 
         function handleMdKeys(e) {
+            // IME 组合输入期间不拦截任何按键（Enter 确认候选词等）
+            if (e.isComposing || e.keyCode === 229) return;
+            if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                if (handleEnterContinuation()) { e.preventDefault(); return; }
+            }
             if (e.key === 'Tab') { e.preventDefault(); insert('    '); return; }
             if (!(e.ctrlKey || e.metaKey)) return;
             var k = e.key.toLowerCase();
             if (k === 'b') { e.preventDefault(); mdCommand('bold'); }
             else if (k === 'i') { e.preventDefault(); mdCommand('italic'); }
+            else if (k === 'x' && e.shiftKey) { e.preventDefault(); mdCommand('strike'); }
             else if (k === 'k') { e.preventDefault(); mdCommand('link'); }
             else if (k === 's') { e.preventDefault(); fireSave(); }
         }
@@ -522,6 +664,13 @@
 
         textarea.addEventListener('keydown', handleMdKeys);
         bindUploadDnd(textarea);
+
+        // 光标移动（无输入）时同步工具栏状态
+        function onDocSelectionChange() {
+            if (destroyed || document.activeElement !== textarea) return;
+            syncMdToolbarState();
+        }
+        document.addEventListener('selectionchange', onDocSelectionChange);
 
         // ---------- 初始化内容 ----------
 
@@ -547,6 +696,7 @@
             destroy: function () {
                 destroyed = true;
                 activeEditors--;
+                document.removeEventListener('selectionchange', onDocSelectionChange);
                 if (previewTimer) clearTimeout(previewTimer);
                 if (root.parentNode) root.parentNode.removeChild(root);
                 if (activeEditors === 0 && toastContainer && toastContainer.parentNode) {
